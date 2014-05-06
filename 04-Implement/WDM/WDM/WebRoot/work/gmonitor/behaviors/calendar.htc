@@ -1,0 +1,568 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="load_event()" for="window" />
+<public:attach event="onclick" onevent="hide()" for=document />
+<public:attach event="onclick" onevent="show()" />
+
+<public:property name="format" />    /*  mmddyyyy (default), ddmmyyyy, nameddyyyy, ddnameyyyy, yymmdd (EDI)     */
+<public:property name="bindTo" />    /*  the ID of an element; calendar will display value in this element      */
+<public:property name="leftPos" />   /*  absolute or relative values for positioning the calendar               */
+<public:property name="topPos" />    /*  ..If relative (e.g. -100, +5) calendar is first aligned with bindTo    */
+                                     /*  ..element, then moved relative to that position                        */
+
+<script language=JScript>
+var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];  // Non-Leap year month days
+var lMonthDays = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]; // Leap year month days
+var oCalPop, oOuterTable, oDateCell, oDatePick, oDisplayElement, oDateLeft, oDateRight, timer, disabledTimer, selDate;
+var selDayBGColor = "rgb(175,215,255)";
+var minDateYear = 1901;
+var maxDateYear = 2099;
+
+function load_event() {
+    var msg = "\n\nThe 'bindTo' attribute must be set to the id of an element in the document. The selected date will be displayed in the element specified by the bindTo attribute.";
+    if (bindTo == null) {
+        alert("Calendar Popup Warning: 'bindTo' attribute not set."+msg);
+    }else {
+        oDisplayElement = element.document.getElementById(bindTo);
+        if ((oDisplayElement == null) || (oDisplayElement == undefined)){
+            alert("Calendar Popup Warning: 'bindTo' element does not exist."+msg);
+        }else {
+            setDisabledState();
+            disabledTimer = window.setInterval(setDisabledState, 1000);
+        }
+    }
+}
+
+function setDisabledState() {
+    var disabled = (oDisplayElement.disabled || oDisplayElement.getAttribute("readonly"));
+    var filter = runtimeStyle.filter;
+    
+    if (disabled && filter=="") {
+        runtimeStyle.filter = "progid:DXImageTransform.Microsoft.BasicImage(Rotation=0,Mirror=0,Invert=1,XRay=1,Grayscale=0,Opacity=.6)";
+    }else if (!disabled && filter!="") {
+        runtimeStyle.filter = "";
+    }
+}
+
+function init() {
+    if (oDisplayElement==undefined) {
+        try {
+            oDisplayElement = element.document.getElementById(bindTo);
+        }catch(e) {
+            alert("Error displaying calendar popup.");
+            return;
+        }
+    }
+    var oCalPopupID = element.document.uniqueID;
+    var oOuterTableID = element.document.uniqueID;
+    var oDateCellID = element.document.uniqueID;
+    var oDateLeftID = element.document.uniqueID;
+    var oDateRightID = element.document.uniqueID;
+    var c = "<table class=calPopUp id=";
+    c += oCalPopupID;
+    c += " cellspacing=0 onclick='window.event.cancelBubble=true'>";
+    c += "<tr><td class=calHead><table width=100% class=calYearHead cellspacing=0><tr>";
+    c += "<td id=";
+    c += oDateLeftID;
+    c += " style='cursor:hand'><img src='/af/images/calLeft.gif' height=16 width=16></td>";
+    c += "<td width=99% id=";
+    c += oDateCellID;
+    c += " align=center>May 2003</td>";
+    c += "<td id=";
+    c += oDateRightID;
+    c += " style='cursor:hand'><img src='/af/images/calRight.gif' height=16 width=16></td>";
+    c += "</tr></table></td></tr><tr><td id=";
+    c += oOuterTableID;
+    c += " style='padding:0'></td></tr></table>";
+
+    insertAdjacentHTML("beforeBegin", c);
+
+    oCalPop = element.document.getElementById(oCalPopupID);
+    oOuterTable = element.document.getElementById(oOuterTableID);
+    oDateCell = element.document.getElementById(oDateCellID);
+    oDateLeft = element.document.getElementById(oDateLeftID);
+    oDateRight = element.document.getElementById(oDateRightID);
+
+    oDateCell.attachEvent("onmousedown", showDatePicker);
+    oDateCell.attachEvent("onmouseup", stopTimer);
+    oDateLeft.attachEvent("onmousedown", dateMinus);
+    oDateLeft.attachEvent("onmouseup", stopTimer);
+
+    oDateLeft.attachEvent("onmouseleave", stopTimer);
+    oDateRight.attachEvent("onmousedown", datePlus);
+    oDateRight.attachEvent("onmouseup", stopTimer);
+    oDateRight.attachEvent("onmouseleave", stopTimer);
+}
+
+function show() {
+    if (oCalPop==undefined || oCalPop=="")
+        init();
+    else {
+        hide();
+        return;
+    }
+    if (oDisplayElement.disabled || oDisplayElement.getAttribute("readonly")) return;
+    var theDate = new Date();
+    var x = 0;
+    var y = 0;
+    var year;
+    selDate = "";
+    
+    var bFilterDlg = false;
+    var oParent = oCalPop.parentElement;
+    while (oParent.tagName!="BODY") {
+        if (oParent.className=="filterHTC") {
+            bFilterDlg = true;
+            break;
+        }
+        oParent = oParent.parentElement
+    }
+
+    try {
+        if (oDisplayElement==null || oDisplayElement==undefined) {
+            throw e;
+        }
+        if (bFilterDlg) {
+            x = oDisplayElement.offsetLeft;
+            y = oDisplayElement.offsetTop + oDisplayElement.offsetHeight;
+        }else {
+            x = getClientLeft(oDisplayElement);
+            y = getClientTop(oDisplayElement) + oDisplayElement.offsetHeight;
+        }
+    }catch(e) {
+        x=0;
+        y=0;
+    }
+
+    if (topPos!=null) {
+        if (topPos.indexOf("+")==0 || topPos.indexOf("-")==0)
+            y = eval(" " + y + topPos);
+        else
+            y = parseInt(topPos);
+    }
+    if (leftPos!=null) {
+        if (leftPos.indexOf("+")==0 || leftPos.indexOf("-")==0)
+            x = eval(" " + x + leftPos);
+        else
+            x = parseInt(leftPos);
+    }
+    try {
+        if (oDisplayElement==null || oDisplayElement==undefined) throw e;
+        if (oDisplayElement.tagName=="INPUT" && oDisplayElement.type=="text")
+            theDate = new Date(oDisplayElement.value);
+        else
+            theDate = new Date(oDisplayElement.innerText);
+        if (isNaN(theDate))
+            throw e;
+        else
+            selDate = theDate;
+    }catch(e) {
+        theDate = new Date();
+    }
+    year = theDate.getFullYear();
+    if (year < minDateYear) year = minDateYear;
+    if (year > maxDateYear) year = maxDateYear;
+    oDateCell.innerText = months[theDate.getMonth()] + " " + year;
+    drawCalendar();
+    oCalPop.style.left = x;
+    oCalPop.style.top = y;
+    oCalPop.style.zIndex = "1000";
+    if (bFilterDlg) {
+        if (getClientTop(oCalPop)+oCalPop.offsetHeight+20 > element.document.body.clientHeight) {
+            oCalPop.style.top = oDisplayElement.offsetTop - oCalPop.offsetHeight;
+        }
+    }
+    oCalPop.style.visibility = "visible";
+    window.event.cancelBubble = true;
+}
+
+function hide() {
+try {
+    oCalPop.removeNode(true);
+    oCalPop="";
+}catch(e) {}
+}
+
+function getMonthNum(name) {
+
+    for (i=0; i<12; i++) {
+        if (name==months[i]) return i;
+    }
+    return -1;
+}
+
+function getDaysInPrevMonth(month, year) {
+    month--;
+    if (month<0) {
+        month=11;
+        year--;
+    }
+    return getDaysInMonth(month, year);
+}
+
+function getDaysInMonth(month, year) {
+    /*
+     * Check for leap year ..
+     * 1.Years evenly divisible by four are normally leap years, except for...
+     * 2.Years also evenly divisible by 100 are not leap years, except for...
+     * 3.Years also evenly divisible by 400 are leap years.
+     */
+    if (year % 4 == 0) {
+        if (year%100 == 0 && year%400 != 0) {
+            return monthDays[month];
+        }else {
+            return lMonthDays[month];
+        }
+    }else {
+        return monthDays[month];
+    }
+}
+
+function datePlus() {
+    var dateArray = oDateCell.innerText.split(" ");
+    var month = getMonthNum(dateArray[0])
+    var year = parseInt(dateArray[1]);
+    month++;
+    if (month>11) {
+        month = 0;
+        year++;
+        if (year>maxDateYear) year = minDateYear;
+    }
+    oDateCell.innerText = months[month] + " " + year;
+    drawCalendar();
+    timer = window.setTimeout(datePlus, 300);
+}
+
+function dateMinus() {
+    var dateArray = oDateCell.innerText.split(" ");
+    var month = getMonthNum(dateArray[0])
+    var year = parseInt(dateArray[1]);
+    month--;
+    if (month<0) {
+        month = 11;
+        year--;
+        if (year<minDateYear) year = maxDateYear;
+    }
+    oDateCell.innerText = months[month] + " " + year;
+    drawCalendar();
+    timer = window.setTimeout(dateMinus, 300);
+}
+
+function stopTimer() {
+    window.clearInterval(timer);
+}
+
+function drawCalendar() {
+    var dateArray = oDateCell.innerText.split(" ");
+    var now = new Date();
+    var year = dateArray[1];
+    var month = getMonthNum(dateArray[0]);
+    var sDate = months[month] + " 1, " + year;
+    var oDate = new Date(sDate);
+    var startsOnDay = oDate.getDay();
+    var numDays = getDaysInMonth(month, year);
+    var numDaysPrev = getDaysInPrevMonth(month, year);
+    var calId = element.document.uniqueId;
+    var oCalendar, i, j, n, c, cells;
+    var today = -1;
+    var d = 0;
+
+    c = "<table class=calBody id='"+calId+"' cellspacing=0>";
+    c += "<tr class=calWeekHead>";
+    c += "<td class=calHeader>S</td>";
+    c += "<td class=calHeader>M</td>";
+    c += "<td class=calHeader>T</td>";
+    c += "<td class=calHeader>W</td>";
+    c += "<td class=calHeader>T</td>";
+    c += "<td class=calHeader>F</td>";
+    c += "<td class=calHeader>S</td>";
+    c += "</tr><tr><td colspan=7>";
+    c += "<table cellpadding=0 cellspacing=0 width=100%><tr>";
+    c += "<td height=1><img src=/af/images/spacer.gif height=1 width=3></td>";
+    c += "<td width=99% bgcolor=black></td>";
+    c += "<td><img src=/af/images/spacer.gif height=1 width=3></td>";
+    c += "</tr></table></td></tr>";
+
+    while (d<numDays) {
+        c += "<tr>";
+        for (i=0; i<7; i++) {
+            if (i>=startsOnDay || d>0) {
+                d++;
+                if (d>numDays) break;
+                c += "<td class=day>" + d + "</td>\n";
+            }else {
+                c += "<td class=grayDay>"+(1+numDaysPrev-(startsOnDay-i))+"</td>\n";
+            }
+        }
+        if (d<numDays) c += "</tr>";
+    }
+    for (j=i; j<7; j++) {
+        c += "<td class=grayDay>"+(j-i+1)+"</td>\n";
+    }
+
+    c += "</tr><tr><td colspan=7>";
+    c += "<table cellpadding=0 cellspacing=0 width=100%><tr>";
+    c += "<td height=1><img src=/af/images/spacer.gif height=1 width=3></td>";
+
+    c += "<td width=99% bgcolor=black></td>";
+    c += "<td><img src=/af/images/spacer.gif height=1 width=3></td>";
+    c += "</tr></table></td></tr>";
+    c += "<tr><td colspan=7 class=today>";
+    c += "Today: "+(now.getMonth()+1)+"/"+now.getDate()+"/"+now.getFullYear();
+    c += "</td></tr></table>";
+
+    oOuterTable.innerHTML = c;
+    oCalendar = element.document.getElementById(calId);
+    oCalendar.attachEvent("onclick", returnDate);
+    oCalendar.attachEvent("onmouseover", mouseOverDay);
+    oCalendar.attachEvent("onmouseout", mouseExitDay);
+    cells = oCalendar.cells;
+    n = cells.length;
+
+    if (now.getMonth()==month && now.getFullYear()==year) {
+        d = now.getDate();
+        for (i=0; i<n; i++) {
+            if (cells[i].innerText==d && cells[i].className=="day") {
+                cells[i].setAttribute("title", "Today");
+                cells[i].style.border = "1 solid rgb(225,0,0)";
+                cells[i].style.padding = "0 2 0 2";
+                today = i;
+                break;
+            }
+        }
+    }
+    if (selDate!="") {
+        if (selDate.getMonth()==month && selDate.getFullYear()==year) {
+            d = selDate.getDate();
+            for (i=0; i<n; i++) {
+                if (cells[i].innerText==d && cells[i].className=="day") {
+                    cells[i].setAttribute("title", (today==i)? "Today/Selected Date":"Selected Date");
+                    cells[i].style.backgroundColor = selDayBGColor;
+                    break;
+                }
+            }
+        }
+    }
+}
+function mouseOverDay() {
+    var oSource = window.event.srcElement;
+    var d = oSource.innerText;
+    if (isNaN(d) || d=="" || oSource.style.backgroundColor==selDayBGColor) return;
+    oSource.runtimeStyle.backgroundColor = "rgb(221,238,255)";
+}
+function mouseExitDay() {
+    var oSource = window.event.srcElement;
+    var d = oSource.innerText;
+    if (isNaN(d) || d=="") return;
+    oSource.runtimeStyle.backgroundColor = "";
+}
+
+function returnDate() {
+    var oSource = window.event.srcElement;
+    var now = new Date();
+    var day = oSource.innerText;
+    var month = oDateCell.innerText;
+    var dateArray, year, sDate, f;
+
+
+    if ((isNaN(day) || day=="") && day.indexOf("Today")!=0) {
+        return;
+    }
+    if (oDisplayElement==null || oDisplayElement==undefined) {
+        return;
+    }
+
+    if (oSource.className=="grayDay") {
+        if (day<10) {
+            month = getAdjacentMonth(month, 1);
+        }
+        else {
+            month = getAdjacentMonth(month, -1);
+        }
+    }
+    else if(oSource.className=="today") {
+        day = now.getDate();
+        month = months[now.getMonth()] + " " + now.getFullYear();
+    }
+    dateArray = month.split(" ");
+    year = dateArray[1];
+    month = getMonthNum(dateArray[0]);
+
+    if (format=="ddmmyyyy") {
+        sDate = day + "/" + month+1 + "/" + year;
+    }
+    else if(format=="nameddyyy") {
+        sDate = months[month] + " " + day + ", " + year;
+    }
+    else if(format=="ddnameyyy") {
+
+        sDate = day + " " + months[month] + ", " + year;
+    }
+    else if (format=="yymmdd") {
+        // EDI format. Woe to Y2k.
+        sDate = year.slice(2,4) + 
+                (String(month+1).length==1?("0"+(month+1)):(month+1)) +
+                (String(day).length==1?("0"+day):day);
+    }
+    else {
+        sDate = month+1 + "/" + day + "/" + year;
+    }
+
+try {
+    if (oDisplayElement.tagName=="INPUT" && oDisplayElement.type=="text") {
+        oDisplayElement.value = sDate;
+
+    }
+    else {
+        oDisplayElement.innerText += sDate;
+    }
+}catch(e){}
+
+    hide();
+}
+
+function twoDigit(s) {
+    s = "" + s;
+    if (s.length==1) s = "0" + s;
+    return s;
+}
+
+function getAdjacentMonth(sMonthYear, pos) {
+    var dateArray = sMonthYear.split(" ");
+    var month = dateArray[0];
+    var year = dateArray[1];
+    var m = getMonthNum(month);
+
+    if (pos==1) {
+        m++;
+        if (m>11) {
+            m=0;
+            year++;
+        }
+    }else {
+        m--;
+        if (m<0) {
+            m=11;
+            year--;
+        }
+    }
+    return months[m] + " " + year;
+}
+
+function showDatePicker() {
+    var c = "";
+    var oSource = window.event.srcElement;
+    var theDate = oDateCell.innerText;
+    if (theDate=="January " + minDateYear || theDate=="February " + minDateYear) {
+        theDate = "March " + minDateYear;
+    }else if(theDate=="December " + maxDateYear || theDate=="November " + maxDateYear) {
+        theDate = "October " + maxDateYear;
+    }
+    var prevDate = getAdjacentMonth(theDate, -1);
+    var nextDate = getAdjacentMonth(theDate, 1);
+    oDatePick = oDateCell.all.scrollingDatePickerObj;
+
+
+
+    if (oDatePick!=undefined) {
+        if (oSource.tagName=="IMG") oSource = oSource.parentElement;
+        if (oSource.tagName!="TD") return;
+        c = oSource.innerHTML;
+        if (c.indexOf("Up")>-1) {
+            scrollDatesUp();
+        }else if(c.indexOf("Dwn")>-1) {
+            scrollDatesDwn();
+        }else {
+            oDatePick.removeNode(true);
+            oDateCell.innerText = c;
+            drawCalendar();
+        }
+
+        return;
+    }
+    c = "<table id=scrollingDatePickerObj class=datePicker cellpadding=0 cellspacing=0>";
+    c += "<tr><td><img src=/af/images/calPickUp.gif></td></tr>";
+    c += "<tr><td>"+ getAdjacentMonth(prevDate, -1) +"</td></tr>";
+    c += "<tr><td>"+ prevDate +"</td></tr>";
+    c += "<tr><td>"+ theDate +"</td></tr>";
+    c += "<tr><td>"+ nextDate +"</td></tr>";
+    c += "<tr><td>"+ getAdjacentMonth(nextDate, 1) +"</td></tr>";
+    c += "<tr><td><img src=/af/images/calPickDwn.gif></td></tr></table>";
+    oDateCell.innerHTML = c + oDateCell.innerText;
+    oDatePick = oDateCell.all.scrollingDatePickerObj;
+    oDatePick.attachEvent("onmouseover", hiliteDate);
+    oDatePick.attachEvent("onmouseleave", hideDatePicker);
+    window.event.cancelBubble = true;
+}
+
+function scrollDatesUp() {
+    if (oDatePick.cells[1].innerText=="January " + minDateYear) return;
+    oDatePick.cells[5].innerText = oDatePick.cells[4].innerText;
+    oDatePick.cells[4].innerText = oDatePick.cells[3].innerText;
+    oDatePick.cells[3].innerText = oDatePick.cells[2].innerText;
+    oDatePick.cells[2].innerText = oDatePick.cells[1].innerText;
+    oDatePick.cells[1].innerText = getAdjacentMonth(oDatePick.cells[1].innerText, -1);
+    timer = window.setTimeout(scrollDatesUp, 100);
+}
+
+function scrollDatesDwn() {
+    if (oDatePick.cells[5].innerText=="December " + maxDateYear) return;
+    oDatePick.cells[1].innerText = oDatePick.cells[2].innerText;
+    oDatePick.cells[2].innerText = oDatePick.cells[3].innerText;
+    oDatePick.cells[3].innerText = oDatePick.cells[4].innerText;
+    oDatePick.cells[4].innerText = oDatePick.cells[5].innerText;
+    oDatePick.cells[5].innerText = getAdjacentMonth(oDatePick.cells[5].innerText, 1);
+    timer = window.setTimeout(scrollDatesDwn, 100);
+}
+
+function hiliteDate() {
+    var oSource = window.event.srcElement;
+    if (oSource.tagName=="IMG") oSource = oSource.parentElement;
+    if (oSource.tagName!="TD") return;
+    oDatePick.cells[0].all.tags("IMG")[0].src = "/af/images/calPickUp.gif";
+    oDatePick.cells[6].all.tags("IMG")[0].src = "/af/images/calPickDwn.gif";
+    for (i=0; i<7; i++) {
+        oDatePick.cells[i].style.backgroundColor = "";
+        oDatePick.cells[i].style.color = "";
+    }
+    oSource.style.backgroundColor = "navy";
+    if (oSource==oDatePick.cells[0])
+        oSource.all.tags("IMG")[0].src = "/af/images/calPickUpW.gif";
+    else if (oSource==oDatePick.cells[6])
+        oSource.all.tags("IMG")[0].src = "/af/images/calPickDwnW.gif";
+    else
+        oSource.style.color = "white";
+}
+
+function hideDatePicker() {
+    stopTimer();
+    try {
+        oDatePick.removeNode(true);
+    }catch(e) {}
+}
+</script>
+</public:component>

@@ -1,0 +1,255 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+/*
+ * Creates a treeview from nested <DIV> tags
+ * assumes that each label is wrapped in <NOBR></NOBR>; num DIV tags = num NOBR tags = num A tags (or num A tags = 0)
+ *
+ *   showLines    if true, tree displays grid lines
+ *   static       if true, tree cannot be collapsed and is always expanded
+ *   expandImg    source of expanded node image
+ *   collpaseImg  source of collapsed node image
+ *   leafImg      source of leafe image
+ *   folderTree   if true, overrides expandedImg and collpaseImg and uses open and closed folders
+ */
+<public:attach event="onload" onevent="init()" for="window" />
+<public:attach event="onclick" onevent="click_event()" />
+<public:method name="selectNodeById" />
+<public:method name="getSelectedIndex" />
+<public:method name="find" />
+<public:property name="showLines" />
+<public:property name="folderTree" />
+<public:property name="static" />
+<public:property name="expandImg" />
+<public:property name="collapseImg" />
+<public:property name="leafImg" />
+
+<script language=JScript>
+var selectedIndex = -1; // the index of the currently selected link and node
+var drawLines = (showLines==null)? true : (showLines.toLowerCase()=="true");
+var staticTree = (static==null)? false  : (static.toLowerCase()=="true");
+var expandImage = (expandImg==null)? ""  : expandImg;
+var collapseImage = (collapseImg==null)? ""  : collapseImg;
+if (expandImage=="" && collapseImage!="") expandImage = collapseImage;
+if (expandImage!="" && collapseImage=="") collapseImage = expandImage;
+var treeGridImg = "url(images/treeGrid.gif)";
+var treeGridEndImg = "url(images/treeGridEnd.gif)";
+if (folderTree!=null) {
+    if (folderTree.toLowerCase()=="true") {
+        expandImage="images/openFolder.gif";
+        collapseImage="images/folder.gif";
+    }
+}
+if (staticTree) {
+    style.position = "relative";
+    style.left = "-15px";
+}
+
+var nodeImg = (collapseImage=="")? "":'<img src="'+collapseImage+'" onClick=fireLink() onMouseOver=setCursor()> ';
+var endNodeImg = (leafImg==null)? "" :'<img src="'+leafImg+'" onClick=fireLink() onMouseOver=setCursor()> ';
+var oWaitImg, temp, nameArr = new Array();
+
+function init() {
+    var nodes=children.tags("DIV"), childNodes, i;
+    var plusImg = (staticTree)? '<img src="images/treeBlank.gif">':'<img src="images/treePlus.gif">';
+    var waitImgId = parent.document.uniqueID;
+    var waitImg = '<img src="images/lgWait.gif" id="'+waitImgId+'" style="position:absolute; visibility:hidden">';
+    
+    for (i=0; i<nodes.length; i++) {
+        childNodes = nodes[i].children;
+        if (childNodes.length>1) {
+            if (nodeImg!="") nodes[i].children[0].insertAdjacentHTML("afterBegin", nodeImg);
+            nodes[i].children[0].insertAdjacentHTML("afterBegin", plusImg);
+        }else {
+            nodes[i].children[0].insertAdjacentHTML("afterBegin", endNodeImg);
+            nodes[i].children[0].insertAdjacentHTML("afterBegin", '<img src="images/treeBlank.gif">');
+        }
+        nodes[i].style.display = "block";
+    }
+    style.display = "block";
+    
+    parent.document.body.insertAdjacentHTML("afterBegin", waitImg);
+    oWaitImg = parent.document.getElementById(waitImgId);
+    oWaitImg.style.left = getClientLeft(frameElement) + frameElement.offsetWidth/2 - oWaitImg.offsetWidth/2;
+    oWaitImg.style.top = getClientTop(frameElement) + frameElement.offsetHeight/2 - oWaitImg.offsetHeight/2 - 20;
+}
+
+function expand(oNode) {
+    var nodes=oNode.children.tags("DIV"), n=nodes.length, childNodes, i;
+    var plusImg = (staticTree)? '<img src="images/treeBlank.gif">':'<img src="images/treePlus.gif">';
+    
+    for (i=0; i<n; i++) {
+        childNodes = nodes[i].children;
+        if (childNodes.length>1) {
+            if (nodeImg!="") childNodes[0].insertAdjacentHTML("afterBegin", nodeImg);
+            childNodes[0].insertAdjacentHTML("afterBegin", plusImg);
+        }else { 
+            if (endNodeImg!="") childNodes[0].insertAdjacentHTML("afterBegin", endNodeImg);
+            childNodes[0].insertAdjacentHTML("afterBegin", '<img src="images/treeBlank.gif">');
+        }
+        if (drawLines) {
+            nodes[i].style.backgroundImage  = (i<n-1)? treeGridImg : treeGridEndImg;
+            nodes[i].style.backgroundRepeat = (i<n-1)? "repeat-y"  : "no-repeat";
+        }
+        nodes[i].style.marginLeft = "18px";
+        nodes[i].style.display = "block";
+    }
+}
+
+function click_event() {
+    var oSource = window.event.srcElement, i;
+    
+    if (oSource.tagName=="IMG") { // expand collapse node
+        var oNode = oSource.parentElement.parentElement; //assumes: <div><nobr><img src=plus><img src=folder></nobr></div>
+        var childNodes = oNode.children.tags("DIV");
+        var folderImg = oNode.all.tags("IMG")[1];
+        
+        if (oSource.src.indexOf("treePlus.gif")>-1) {
+            oSource.src = "images/treeMinus.gif";
+            if (expandImage!="") folderImg.src = expandImage;
+            if (childNodes[0].style.marginLeft=="") {
+                expand(oNode);
+            }else {
+                for (i=0; i<childNodes.length; i++) {
+                    childNodes[i].style.display="block";
+                }
+            }
+        }else if (oSource.src.indexOf("treeMinus.gif")>-1) {
+            oSource.src = "images/treePlus.gif";
+            if (collapseImage!="") folderImg.src = collapseImage;
+            for (i=0; i<childNodes.length; i++) {
+                childNodes[i].style.display="none";
+            }
+        }  
+    }else if(oSource.tagName=="A") { // highlight node
+        var links=element.all.tags("A"), n=links.length;
+        if (selectedIndex>=0) {
+            links[selectedIndex].style.backgroundColor = ""
+            links[selectedIndex].style.border = "";
+        }
+        oSource.style.backgroundColor = "rgb(215,226,253)"; 
+        oSource.style.border = "1 solid rgb(97,134,220)";
+        oSource.style.paddingRight = "1px";
+        for (i=0; i<n; i++) {
+            if (links[i]==oSource) {
+                selectedIndex=i;
+                break;
+            }
+        }
+        oSource.blur();
+    }
+}
+
+
+function selectNode(oNode) {
+    temp = oNode;
+    oWaitImg.style.visibility = "visible";
+    setTimeout(selNode, 1); //force wait image style refresh
+}
+
+function selNode() {
+    var e = new Array(), n=-1, oParent, img, i;
+    var oNode = temp;
+    
+    oParent = oNode.parentElement;
+    while (oParent!=element) {
+        n = n + 1;
+        e[n] = oParent;
+        oParent = oParent.parentElement;
+    }
+    for (i=n; i>=0; i--) {
+        img = e[i].all.tags("IMG")[0];
+        if (img.src.indexOf("treePlus.gif")>=0) img.click();
+    }
+    try{oNode.all.tags("A")[0].click();}catch(e){}
+    var t = getClientTop(oNode);
+    var l = getClientLeft(oNode);
+    var h = element.document.body.clientHeight;
+    var w = element.document.body.clientWidth;
+    var st = element.document.body.scrollTop;
+    var sl = element.document.body.scrollLeft;
+    if (t<st) {
+        oNode.scrollIntoView();
+    }else if (t+oNode.childNodes[0].offsetHeight > st+h) {
+        oNode.childNodes[0].scrollIntoView(false);
+    }else if (l+oNode.childNodes[0].offsetWidth+4 > sl+w) { 
+        element.document.body.scrollLeft = l+oNode.childNodes[0].offsetWidth-w+4;
+    }else if (l<sl) {
+         element.document.body.scrollLeft = l;
+    }
+    oWaitImg.style.visibility = "hidden";
+}
+
+function selectNodeById(sId) {
+    var oNode = element.document.getElementById(sId);
+
+    if (oNode==undefined || oNode.tagName!="DIV")
+        alert('Cannot find a node with the ID "'+sId+'".');
+    else
+        selectNode(oNode);
+}
+
+function find(name) {
+    if (name=="") {
+        alert("Please enter a string to search for, and then click Find.");
+        return;
+    }
+    oWaitImg.style.visibility = "visible";
+    temp = name;           //it turns out that if name is passed to search(), the wait image style won't refresh
+    setTimeout(search, 1); //this is needed to force the wait image style refresh before the search process completes
+}
+
+function search() {
+    var nodes = element.all.tags("NOBR"), n=nodes.length, i;
+    var links = element.all.tags("A");
+    var name = temp.toLowerCase();
+    
+    if (nameArr.length!=n) {
+        for (i=0; i<n; i++) {
+            nameArr[i] = nodes[i].innerText.toLowerCase();
+        }
+    }
+    for (i=selectedIndex+1; i<n; i++) {
+        if (nameArr[i].indexOf(name)>-1) {
+            selectNode(nodes[i].parentElement);
+            return;
+        }
+    }
+    for (i=0; i<=selectedIndex; i++) {
+        if (nameArr[i].indexOf(name)>-1) {
+            selectNode(nodes[i].parentElement);
+            return;
+        }
+    }
+    oWaitImg.style.visibility = "hidden";
+    alert('Cannot find "'+name+'".');
+}
+
+function getSelectedIndex() {
+    return selectedIndex;
+}
+
+</script>
+</public:component>

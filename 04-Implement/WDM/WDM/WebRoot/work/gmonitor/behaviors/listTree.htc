@@ -1,0 +1,248 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+/*
+ * Creates a treeview from nested <DIV> tags
+ *
+ *   showLines    if true, tree displays grid lines
+ *   static       if true, tree cannot be collapsed and is always expanded
+ *   expandImg    source of expanded node image
+ *   collpaseImg  source of collapsed node image
+ *   leafImg      source of leafe image
+ *   folderTree   if true, overrides expandedImg and collpaseImg and uses open and closed folders
+ */
+/*<public:attach event="onload" onevent="init()" for="window" />*/
+<ATTACH EVENT="ondocumentready" HANDLER="init" />
+<public:attach event="onscroll" onevent="resize_event()" for="window" />
+<public:attach event="onresize" onevent="resize_event()" for="window" />
+<public:attach event="onclick" onevent="click_event()" />
+<public:method name="expandTree" />
+<public:method name="collapseTree" />
+<public:property name="showLines" />
+<public:property name="folderTree" />
+<public:property name="static" />
+<public:property name="expandImg" />
+<public:property name="collapseImg" />
+<public:property name="leafImg" />
+
+<script language=JScript>
+var drawLines = (showLines==null)? true : (showLines.toLowerCase()=="true");
+var leafImage = (leafImg==null)? ""  : '<img src="'+leafImg+'" align=absmiddle border=0 onClick=fireLink() onMouseOver=setCursor()> ';
+var staticTree = (static==null)? false  : (static.toLowerCase()=="true");
+var expandImage = (expandImg==null)? ""  : expandImg;
+var collapseImage = (collapseImg==null)? ""  : collapseImg;
+if (expandImage=="" && collapseImage!="") expandImage = collapseImage;
+if (expandImage!="" && collapseImage=="") collapseImage = expandImage;
+var treeGridImg = "url(images/treeGrid.gif)";
+var treeGridEndImg = "url(images/treeGridEnd.gif)";
+var hasInitialized = false;
+var fitToPage = false;
+var colResize = false;
+var oColHead, colHeadWidth, mouseDownPos, oHeader;
+if (folderTree!=null) {
+    if (folderTree.toLowerCase()=="true") {
+        expandImage="images/openFolder.gif";
+        collapseImage="images/folder.gif";
+    }
+}
+if (staticTree) {
+    style.position = "relative";
+    style.left = "-15px";
+}
+
+function init() {
+    if (hasInitialized) return;
+    var nodes = element.all.tags("DIV");
+    var imgTag = (expandImage=="")? "" : '<img src="'+expandImage+'" onClick=fireLink() onMouseOver=setCursor()> ';
+    var nodeImg = (staticTree)? '<img src="images/treeBlank.gif">' : '<img src="images/treeMinus.gif">';
+    var fields, childNodes, numChildren, oChild, temp, i, j, l, w;
+    var headerId = element.document.uniqueId;
+
+    for (i=0; i<nodes.length; i++) {      
+        childNodes = nodes[i].children.tags("DIV");
+        numChildren = childNodes.length;
+        
+        if (numChildren > 0) {
+            if (imgTag!="") nodes[i].insertAdjacentHTML("afterBegin", imgTag);
+            nodes[i].insertAdjacentHTML("afterBegin", nodeImg);
+            
+            for (j=0; j<numChildren; j++) {
+                oChild = childNodes[j];
+                oChild.style.marginLeft = "18px"; 
+                if (drawLines) { 
+                    oChild.style.backgroundImage  = (j<numChildren-1)? treeGridImg : treeGridEndImg;
+                    oChild.style.backgroundRepeat = (j<numChildren-1)? "repeat-y"  : "no-repeat";
+                }  
+            }
+        }else { //terminating leaf node
+            nodes[i].insertAdjacentHTML("afterBegin", leafImage);
+            nodes[i].insertAdjacentHTML("afterBegin", '<img src="images/treeBlank.gif">');
+        }
+    }
+
+    fields = element.all.tags("INPUT");
+    temp = element.parentElement.getAttribute("fitToPage");
+    fitToPage = (temp!=null && temp.toLowerCase()!="false");
+    l = fields[0].offsetLeft;
+    w = element.document.body.clientWidth - l;
+    if (w>50 && fitToPage) { 
+        for (i=0; i<fields.length; i++) {
+            fields[i].style.width = w;
+        }
+    }
+    w = fields[0].offsetWidth;
+    temp = "<table id='"+headerId+"' cellspacing=0 style='table-layout:fixed; position:relative; z-index:1000; margin-bottom:1'><tr class=listHead align=center id=structureHeader><td class=colHead width=" + l + ">Structure</td><td class=colHead id=valueHeader width=" + w + ">Values</td></tr></table>";
+    insertAdjacentHTML("beforeBegin", temp);
+    oHeader = element.document.getElementById(headerId);
+    oHeader.attachEvent("onmouseup", colHeadMouseUp);
+    oHeader.attachEvent("onmousedown", colHeadMouseDown);
+    oHeader.attachEvent("onmousemove", colHeadMouseMove);
+    hasInitialized = true;
+}
+
+function colHeadMouseUp() {
+    colResize = false;
+    if (oColHead==null) return; 
+    oColHead.releaseCapture();
+}
+
+function colHeadMouseDown() {
+    if (event.button!=1) return;
+    oColHead = window.event.srcElement;
+    if (oColHead.tagName!="TD") return;
+    
+    if (oColHead.runtimeStyle.cursor != "default") {
+        colResize = true;
+        mouseDownPos = window.event.clientX;
+        colHeadWidth = parseInt(oColHead.getAttribute("width"));
+        oColHead.setCapture();
+    }
+}
+
+function colHeadMouseMove() {
+    var x = window.event.clientX;
+    var oSource = window.event.srcElement;
+    var fields = element.all.tags("INPUT");
+    var n=fields.length, l, w, temp;
+    
+    if (colResize) {
+        newWidth = colHeadWidth + x - mouseDownPos;
+        if (newWidth >= 50) {
+            oColHead.setAttribute("width", newWidth, 0);
+            l = oHeader.cells[1].offsetLeft;
+            w = oHeader.cells[1].offsetWidth;
+            temp = element.document.body.clientWidth-l;
+            if (fitToPage && temp>50 && oColHead==oHeader.cells[0]) {
+                w = temp;
+                oHeader.cells[1].setAttribute("width", w, 0);
+            }
+            for (i=0; i<n; i++) {
+                fields[i].style.left = l;
+                fields[i].style.width = w;
+            }
+        }
+    }else if(oSource.tagName=="TD") {
+        dragHandle = oSource.offsetWidth + oSource.offsetLeft - element.document.body.scrollLeft - 10; 
+        oSource.runtimeStyle.cursor = (x > dragHandle)? "e-resize" : "default";
+    }
+}
+
+function click_event() {
+    var refreshLayout=false, oSource=window.event.srcElement, i;
+    
+    if (oSource.tagName=="IMG") { // expand collapse node
+        var node = oSource.parentElement;
+        while (node.tagName!="DIV") node = node.parentElement;
+        if (node==element) return;
+        var childNodes = node.children.tags("DIV");
+        var imgs = node.all.tags("IMG");
+        
+        if (oSource.src.indexOf("treeMinus.gif")>-1) {
+            refreshLayout = true;
+            oSource.src = "images/treePlus.gif";
+            if (collapseImage!="") imgs[1].src = collapseImage;
+            for (i=0; i<childNodes.length; i++) {
+                childNodes[i].style.display="none";
+            }
+        }else if(oSource.src.indexOf("treePlus.gif")>-1) {
+            refreshLayout = true;
+            oSource.src = "images/treeMinus.gif";
+            if (expandImage!="") imgs[1].src = expandImage;
+            for (i=0; i<childNodes.length; i++) {
+                childNodes[i].style.display="block";
+            }
+        }     
+    }else if(oSource.tagName=="A") { // highlight node
+        var coll = element.all.tags("A");
+        for (i=0; i<coll.length; i++) {
+            if (coll[i].style.backgroundColor!="") {
+                coll[i].style.backgroundColor = ""
+                coll[i].style.border = "";
+                break;
+            }
+        }
+        oSource.style.backgroundColor = "rgb(215,226,253)"; 
+        oSource.style.border = "1 solid rgb(97,134,220)";
+        oSource.style.paddingRight = "1px";
+        oSource.blur();
+    }
+
+    if (refreshLayout) {
+        try { 
+            var divs = element.all.tags("DIV");
+            var flds = element.all.tags("INPUT");
+            for (i=0; i<flds.length; i++) {
+                flds[i].style.top = divs[i].offsetTop;
+            }
+            resize_event();
+        }catch(e) {}
+    }
+}
+
+function resize_event() {
+    oHeader.style.top = element.document.body.scrollTop;
+}
+
+/*
+ * Expand all nodes in the tree
+ */
+function expandTree() {
+    var coll = element.all.tags("IMG");
+    for (var i=0; i<coll.length; i++) {
+        if (coll[i].src.indexOf("treePlus.gif")>-1) coll[i].click();
+    }
+}
+
+/*
+ * Collapse all nodes in the tree
+ */
+function collapseTree() {
+    var coll = element.all.tags("IMG");
+    for (var i=0; i<coll.length; i++) {
+        if (coll[i].src.indexOf("treeMinus.gif")>-1) coll[i].click();
+    }
+}
+</script>
+</public:component>

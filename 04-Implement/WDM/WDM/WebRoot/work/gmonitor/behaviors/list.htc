@@ -1,0 +1,636 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="init()" for="window" />
+<public:attach event="onscroll" onevent="scroll_event()" for="window" />
+<public:attach event="onresize" onevent="resize_event()" for="window" />
+<public:attach event="onactivate" onevent="activate_event()" for="document" />
+<public:attach event="ondeactivate" onevent="deactivate_event()" for="document" />
+<public:attach event="onkeydown" onevent="keyDown_event()" for="document" />
+<public:attach event="onclick" onevent="click_event()" />
+<public:attach event="ondblclick" onevent="dblClick_event()" />
+
+<public:property name="bAllowColReorder" />
+<public:property name="numRows" />
+<public:property name="multiSelect" />
+<public:property name="saveUserPref" />  //if true, saves column order and size as a cookie; default is true
+<public:property name="clipData" />       //set clipData = false for large lists (>100 rows) to boost performance
+<public:method name="selectAll" />
+<public:method name="untruncateAll" />
+<public:method name="init" />
+<public:method name="scroll_event" />
+
+<script language=JScript>
+var saveColSettings = (saveUserPref==null)? true : (saveUserPref.toLowerCase()!="false");;
+var allowMultiSelect = (multiSelect==null)? true : (multiSelect.toLowerCase()!="false");
+var truncateCells = (clipData==null)? false : (clipData.toLowerCase()!="false");
+var oColHead, oColDummy, oPointer, colHeadWidth, mouseDownPos; //reordering/sizing col heads
+//var numCols, numRows, borderColorLight, borderColorDark, rowArray, oDoc, oBody;
+var numCols, borderColorLight, borderColorDark, rowArray, oDoc, oBody;
+var activeSelectionColor = "F5F5A5";
+var graySelectionColor = "E1DED7";   //225,222,215
+var colResizeCursor = "e-resize";
+var allowColReorder = (bAllowColReorder==null)?true:false;
+var colResize = false;               //flag; true when col head is being resized
+var mouseDown = false;               //flag; true when mouse button is depressed on col head
+
+/*
+ * Saves the column order and width information in a cookie.  All lists info are
+ * saved in the same cookie, named tpruiListData.  The info in the cookie is of
+ * the form: listid:colHeader,width;colHeader,width;|listid:...
+ */
+function saveColOrder() {
+    if (!saveColSettings) return;
+    var sId = unescape(element.getAttribute("LISTID")), listCookie="", cookieArr, temp, i;
+
+    // Get the info for this list to save in the cookie.  For each column, this
+    // consists of the filtername of a column header and the width, separated
+    // by a comma, and then each column's data is separated by semicolons.
+    for (i=0; i<numCols; i++) {
+        temp = (truncateCells)? trim(rowArray[0][i]) : trim(cells[i].getAttribute("filtername"));
+        listCookie += temp + "," + cells[i].width + ";";
+    }
+    listCookie = listCookie.substring(0, listCookie.length-1); // Remove the last semicolon
+    listCookie = sId + ":" + listCookie + "|";
+    temp = getCookie("tpruiListData");
+
+    if (temp!=null) {
+        // Append all the lists' data except any we already have for this list
+        cookieArr = temp.split("|");
+        for (i=0; i<cookieArr.length; i++) {
+            cookieArr[i] = cookieArr[i].split(":");
+            if (sId!=cookieArr[i][0])
+                listCookie += cookieArr[i][0] + ":" + cookieArr[i][1] + "|";
+        }
+    }
+    listCookie = listCookie.substring(0, listCookie.length-1);
+    setCookie("tpruiListData", listCookie, 300); // Lives for 300 days
+}
+
+/*
+ * Retrieves and sets the column order and width information from a cookie.
+ * All lists info are saved in the same cookie, named tpruiListData.  The info
+ * in the cookie is of the form:
+ *    listid:colHeader,width;colHeader,width;|listid:...
+ * If necessary, this function reorders the columns to match the order in the
+ * cookie.
+ */
+function setColOrder() {
+    if (!saveColSettings) return;
+    var i, j, t, s, temp, sTitle, sFiltername, cookieArr, flag, coll=all.tags("COL");
+    var sId=unescape(element.getAttribute("LISTID"));
+
+    // Cookie consists of "listid:value|listid:value"
+    temp = getCookie("tpruiListData");
+    if (temp==null) return;
+    cookieArr = temp.split("|");
+    temp = "";
+    // Find the cookie for this list
+    for (i=0; i<cookieArr.length; i++) {
+        cookieArr[i] = cookieArr[i].split(":");
+        if (sId==cookieArr[i][0]) {
+            temp = cookieArr[i][1];
+            break;
+        }
+    }
+    if (temp=="") return;
+
+    // Value of cookie is info about each column, delimited by semicolons
+    cookieArr = temp.split(";");
+    if (cookieArr.length!=numCols) return;
+    for (i=0; i<numCols; i++) {
+        flag = true;
+        cookieArr[i] = cookieArr[i].split(",");
+        // Find the column header for which we have column info
+        for (j=0; j<numCols; j++) {
+            if (cookieArr[i][0]==trim(cells[j].getAttribute("filtername"))) {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) return; // Something wrong...this column isn't in this list
+    }
+
+    // Do any reordering of columns necessary based on this info
+    for (t=0; t<numCols; t++) {
+        if (trim(cells[t].getAttribute("filtername"))!=cookieArr[t][0]) {
+            for (s=t+1; s<numCols; s++) {
+                if (trim(cells[s].getAttribute("filtername"))==cookieArr[t][0]) {
+                    //move s to t
+                    for (i=0; i<numRows; i++) {
+                        temp = rows[i].cells[s].innerHTML;
+                        for (j=s; j>t; j--) {
+                            rows[i].cells[j].innerHTML = rows[i].cells[j-1].innerHTML;
+                        }
+                        rows[i].cells[t].innerHTML = temp;
+                    }
+
+                    sTitle = cells[s].getAttribute("title");
+                    sFiltername = cells[s].getAttribute("filtername");
+                    for (j=s; j>t; j--) {
+                        cells[j].setAttribute("title", cells[j-1].getAttribute("title"), 0);
+                        cells[j].setAttribute("filtername", cells[j-1].getAttribute("filtername"), 0);
+                    }
+                    cells[t].setAttribute("title", sTitle, 0);
+                    cells[t].setAttribute("filtername", sFiltername, 0);
+
+                    //transfer the column alignments by swapping class names of the COL tags
+                    if (coll.length==rows[0].cells.length) {
+                        temp = coll[s].className;
+                        for (j=s; j>t; j--) {
+                            coll[j].className = coll[j-1].className;
+                        }
+                        coll[t].className = temp;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // Set the widths of all the columns
+    for (i=0; i<numCols; i++) {
+        if (trim(cells[i].getAttribute("filtername"))==cookieArr[i][0])
+            cells[i].setAttribute("width", cookieArr[i][1], 0);
+    }
+}
+
+function init() {
+    var i, j, colWidth;
+    oDoc = element.document;         //referenc to the doc that contains the lis
+    oBody = oDoc.body;               //reference to the body that contains the list
+    numRows = rows.length;
+    numCols = rows[0].cells.length;
+    rowArray = new Array(numRows-1);
+    borderColorLight = cells[0].currentStyle.borderTopColor;
+    borderColorDark = cells[0].currentStyle.borderRightColor;
+
+    if (navigator.appVersion.indexOf("MSIE 6")>0) colResizeCursor="col-resize";
+
+    for (i=1; i<numRows; i++) {      //shade every other row
+        if (rows[i].style.backgroundColor == "#ff5353"){
+        }else{
+        	rows[i].style.backgroundColor = (i%2==0)? "white" : "F2F2EE"; //242,242,238
+        }
+    }
+    setAttribute("cellspacing", "0", 0); //set cellspacing=1 to show lines
+    //style.backgroundColor = "silver";  //set line color
+
+    // initialize the column headers
+    setColOrder();
+    for (i=0; i<numCols; i++) {
+        cells[i].style.paddingTop = "0";
+        cells[i].style.paddingBottom = "0";
+        cells[i].attachEvent("onmouseup", colHeadMouseUp);
+        cells[i].attachEvent("onmousedown", colHeadMouseDown);
+        cells[i].attachEvent("onmousemove", colHeadMouseMove);
+        colWidth = cells[i].getAttribute("width");
+        if (colWidth=="" || colWidth.indexOf("%") >-1) { //ensure that column widths are explicitly defined as absolute values
+            colWidth = cells[i].offsetWidth;
+            if (colWidth==0) colWidth = "100";
+            cells[i].setAttribute("width", colWidth, 0);
+        }
+    }
+
+    // create objects for reordering columns
+    if (oBody.innerHTML.indexOf("<DIV id=oColDummy")==-1) {
+        cDummy = '<div id=colDummy style="position:absolute;z-index:1;background-color:rgb(165,162,110);cursor:default;filter:alpha(opacity=55);display:none;padding-top:1"></div>';
+        cPointer = '<img id=colPointer src=images/colReorderArrow.gif style="position:absolute;z-index:1;display:none">';
+        oBody.insertAdjacentHTML("afterBegin", cPointer);
+        oBody.insertAdjacentHTML("afterBegin", cDummy);
+    }
+    oPointer = oDoc.getElementById("colPointer");  //arrow indicating where col head is moved to
+    oColDummy = oDoc.getElementById("colDummy");   //shadow col head that is dragged to new location
+
+    if (truncateCells) {
+        for (i=0; i<numRows; i++) {                //load the table data into an array
+            rowArray[i] = new Array(numCols-1);
+            for (j=0; j<numCols; j++) {
+                rowArray[i][j] = rows[i].cells[j].innerText;
+            }
+        }
+        if (oDoc.all.test4Truncation==undefined)   //create a hidden element used to determine size of cell data
+            oBody.insertAdjacentHTML("beforeEnd", "<font id=test4Truncation style='visibility:hidden;position:absolute;left:-1000;top:-1000'></font>");
+        for (i=0; i<numCols; i++) {
+            truncateData(i);
+        }
+    }
+    setTimeout(resize_event, 10);
+}
+
+function activate_event() {
+    for (var i=1; i<numRows; i++) {
+        if (rows[i].runtimeStyle.backgroundColor != "")
+            rows[i].runtimeStyle.backgroundColor = activeSelectionColor;
+    }
+}
+function deactivate_event() {
+    for (var i=1; i<numRows; i++) {
+        if (rows[i].runtimeStyle.backgroundColor != "")
+            rows[i].runtimeStyle.backgroundColor = graySelectionColor;
+    }
+}
+
+// select rows
+function click_event() {
+    var i,  s, c;
+    var oRow = window.event.srcElement;
+    while (oRow.tagName != "TR") {
+        if (oRow.tagName == "BODY") return;
+
+
+        oRow = oRow.parentElement;
+    }
+    if (oRow==rows[0]) return;
+
+    if (window.event.shiftKey && allowMultiSelect) {
+        oDoc.selection.empty();
+        for (s=1; s<numRows; s++) {  //get the index of the first Selected row
+            if (rows[s].runtimeStyle.backgroundColor!="") break;
+        }          for (c=1; c<numRows; c++) { //get the index of the row that was Clicked
+            if (rows[c]==oRow) break;
+        }
+        for (i=1; i<numRows; i++) { //clear the selection of all rows
+            rows[i].runtimeStyle.backgroundColor = "";
+        }
+        //if s<c a row before the one clicked was already selected; select rows s-c
+        if(s==numRows) { //no row was selected; select rows 1-c
+            s = 1;
+        }else if(s>c) { //a row after the one clicked was already selected; select rows c-s
+            i = s; s = c; c = i+1;
+        }
+        for (i=s; i<c; i++) {
+            rows[i].runtimeStyle.backgroundColor = activeSelectionColor;
+        }
+    }else if (window.event.ctrlKey && allowMultiSelect) {
+        oDoc.selection.empty();
+        if (oRow.runtimeStyle.backgroundColor != "") { //clicked same row, so unselect it
+            oRow.runtimeStyle.backgroundColor = "";
+            return;
+        }
+    }else {
+        for (i=1; i<numRows; i++) {
+            rows[i].runtimeStyle.backgroundColor = "";
+        }
+    }
+    oRow.runtimeStyle.backgroundColor = activeSelectionColor;
+}
+
+// Fire the first link in the row
+function dblClick_event() {
+    var oRow = window.event.srcElement;
+    while (oRow.tagName != "TR") {
+        if (oRow.tagName == "BODY") return;
+        oRow = oRow.parentElement;
+    }
+    if (oRow==rows[0]) return;
+    dblClickRow(oRow);
+}
+
+function keyDown_event() {
+    var i, k = window.event.keyCode;
+    if (k==37 || k==38) { //left arrow, up arrow - select previous row
+        window.event.returnValue = false;
+        for (i=2; i<numRows; i++) {
+            if (rows[i].runtimeStyle.backgroundColor!="") {
+                if (oBody.scrollTop > 0 && rows[i-2].offsetTop <= oBody.scrollTop) { //scroll row into view if needed
+                    rows[0].style.top = rows[i-2].offsetTop;
+                    oBody.scrollTop = (i>2)? rows[i-2].offsetTop : 0;
+                }
+                rows[i-1].click();
+                return;
+            }
+        }
+        rows[1].click();
+    }else if(k==39 || k==40) { //right arrow, down arrow - select next row
+        window.event.returnValue = false;
+        if (rows[numRows-1].runtimeStyle.backgroundColor!="") return;
+        for (i=numRows-2; i>=1; i--) {
+            if (rows[i].runtimeStyle.backgroundColor!="") {
+                if (rows[i+1].offsetTop+rows[i+1].clientHeight > oBody.clientHeight+oBody.scrollTop)
+                    rows[i+1].scrollIntoView(false); //scroll row into view if needed
+                rows[i+1].click();
+                return;
+            }
+        }
+        rows[1].click();
+    }else if(k==13) { //enter - double-click row
+        window.event.returnValue = false;
+        for (i=1; i<numRows; i++) {
+            if (rows[i].runtimeStyle.backgroundColor!="") {
+                dblClickRow(rows[i]);
+                break;
+            }
+        }
+    }
+}
+
+// move list head to top on window_scroll event
+function scroll_event() {
+    rows[0].style.top = oBody.scrollTop;
+}
+
+// resize list on window_resize event
+function resize_event() {
+    var d, w, oLastColHead = cells[numCols-1];
+    rows[0].style.top = oBody.scrollTop;
+    //var parentFrame = window.frameElement;
+
+    if (clientWidth < oBody.clientWidth) {
+        d = oBody.clientWidth - clientWidth;
+        oLastColHead.setAttribute("width", parseInt(oLastColHead.getAttribute("width")) + d, 0);
+    }else if(clientWidth > oBody.clientWidth) {
+        d = clientWidth - oBody.clientWidth;
+        w = parseInt(oLastColHead.getAttribute("width")) - d;
+        if (w>=100) oLastColHead.setAttribute("width", w, 0);
+    }
+}
+
+// Resize/reorder column headers
+function colHeadMouseMove() {
+    var i, d, w, s, newWidth, x = window.event.clientX;
+    var oLastColHead = cells[numCols-1];
+
+    if (colResize) { //resize col
+        newWidth = colHeadWidth + x - mouseDownPos;
+        if (newWidth >= 25) {
+            oColHead.setAttribute("width", newWidth, 0);
+            if (clientWidth < oBody.clientWidth) { //resize the list width to fill the frame
+                d = oBody.clientWidth - clientWidth;
+                oLastColHead.setAttribute("width", parseInt(oLastColHead.getAttribute("width")) + d, 0);
+            }else if(clientWidth > oBody.clientWidth) {
+                d = clientWidth - oBody.clientWidth;
+                w = parseInt(oLastColHead.getAttribute("width")) - d;
+                if (w>=200 && oLastColHead != oColHead) oLastColHead.setAttribute("width", w, 0);
+            }
+        }
+    }else if(mouseDown && allowColReorder) { //change col order
+        if (oColDummy.style.display=="none") {
+            if (!initColReorderObjects()) return;
+        }
+        oColDummy.style.left = x - mouseDownPos; //move semi-transparent dummy col head
+        colLeft = oColDummy.offsetLeft;
+        s = oBody.scrollLeft;
+        if(colLeft-s < 0 && s > 0) { //scroll list to left if needed
+            oBody.scrollLeft-=10;
+            mouseDownPos+=10;
+            oColDummy.style.left = x - mouseDownPos;
+            s = oBody.scrollLeft;
+        }else if(colLeft + oColDummy.clientWidth > oBody.clientWidth+s && colLeft+oColDummy.clientWidth < clientWidth) {
+            //scroll list to right if needed
+            oBody.scrollLeft+=10;
+            mouseDownPos-=10;
+            oColDummy.style.left = x - mouseDownPos;
+            s = oBody.scrollLeft;
+        }
+        for (i=0; i<numCols; i++) { //move col insertion pointers
+            if (x > cells[i].offsetLeft-s && x < cells[i].offsetLeft+cells[i].clientWidth-s) {
+                oPointer.style.left = cells[i].offsetLeft-4;
+                break;
+            }
+        }
+    }else {
+        oSource = window.event.srcElement;
+        while (oSource.tagName!="TD") {
+            if (oSource.tagName=="BODY") return;
+            oSource = oSource.parentElement;
+        }
+        //the last 10 pixels of the col header are used as a resize handle
+        dragHandle = oSource.offsetWidth + oSource.offsetLeft - oBody.scrollLeft - 10;
+        oSource.runtimeStyle.cursor = (x > dragHandle)? colResizeCursor : "default";
+    }
+}
+
+// Give column headers a depressed appearance when clicked; prepare to resize column
+function colHeadMouseDown() {
+    if (event.button!=1) return;
+    oColHead = window.event.srcElement;
+    while (oColHead.tagName!="TD") oColHead = oColHead.parentElement;
+
+    oColHead.setCapture();
+    mouseDownPos = window.event.clientX;
+    mouseDown = true;
+
+
+
+    if (oColHead.runtimeStyle.cursor != "default") {
+        colResize = true;
+        colHeadWidth = parseInt(oColHead.getAttribute("width"));
+    }else {
+        oColHead.runtimeStyle.borderColor = borderColorDark;
+        oColHead.runtimeStyle.borderRightColor = borderColorLight;
+        oColHead.runtimeStyle.borderBottomColor = borderColorLight;
+    }
+}
+
+// Return appearance to normal after being depresed and release capture of mouse events
+function colHeadMouseUp() {
+    mouseDown = false;
+    colResize = false;
+    if (oColHead == null) return; //list was probably just sorted on the client side
+    oColHead.releaseCapture();
+    oColHead.runtimeStyle.borderColor = "";
+    oColDummy.style.display = "none";
+    var coll = all.tags("COL");
+    var t, s, i, j, temp, sTitle, sFiltername;
+
+    //change column order
+
+
+    if (oPointer.style.display!="none" && oPointer.offsetLeft+4!=oColHead.offsetLeft) {
+        for (t=0; t<numCols; t++) { //get target column index
+
+            if (oPointer.offsetLeft+4==cells[t].offsetLeft) break;
+        }
+        for (s=0; s<numCols; s++) { //get source column index
+            if (oColHead==cells[s]) break;
+        }
+        if (t>s) {
+            for (i=0; i<numRows; i++) {
+                temp = rows[i].cells[s].innerHTML;
+                for (j=s; j<t; j++) {
+                    rows[i].cells[j].innerHTML = rows[i].cells[j+1].innerHTML;
+                }
+                rows[i].cells[t].innerHTML = temp;
+                if (truncateCells) {
+                    temp = rowArray[i][s];
+                    for (j=s; j<t; j++) {
+                        rowArray[i][j] = rowArray[i][j+1];
+                    }
+                    rowArray[i][t] = temp;
+                }
+            }
+            temp = cells[s].getAttribute("width");
+            sTitle = cells[s].getAttribute("title");
+            sFiltername = cells[s].getAttribute("filtername");
+            for (j=s; j<t; j++) {
+                cells[j].setAttribute("width", cells[j+1].getAttribute("width"), 0);
+                cells[j].setAttribute("title", cells[j+1].getAttribute("title"), 0);
+                cells[j].setAttribute("filtername", cells[j+1].getAttribute("filtername"), 0);
+            }
+            cells[t].setAttribute("width", temp, 0);
+            cells[t].setAttribute("title", sTitle, 0);
+            cells[t].setAttribute("filtername", sFiltername, 0);
+            //transfer the column alignments by swapping class names of the COL tag
+            if (coll.length==rows[0].cells.length) {
+                temp = coll[s].className;
+                for (j=s; j<t; j++) {
+                    coll[j].className = coll[j+1].className;
+                }
+                coll[t].className = temp;
+            }
+        }else {
+            for (i=0; i<numRows; i++) {
+                temp = rows[i].cells[s].innerHTML;
+                for (j=s; j>t; j--) {
+                    rows[i].cells[j].innerHTML = rows[i].cells[j-1].innerHTML;
+                }
+                rows[i].cells[t].innerHTML = temp;
+                if (truncateCells) {
+                    temp = rowArray[i][s];
+                    for (j=s; j>t; j--) {
+                        rowArray[i][j] = rowArray[i][j-1];
+                    }
+                    rowArray[i][t] = temp;
+                }
+            }
+
+            temp = cells[s].getAttribute("width");
+            sTitle = cells[s].getAttribute("title");
+            sFiltername = cells[s].getAttribute("filtername");
+            for (j=s; j>t; j--) {
+                cells[j].setAttribute("width", cells[j-1].getAttribute("width"), 0);
+                cells[j].setAttribute("title", cells[j-1].getAttribute("title"), 0);
+                cells[j].setAttribute("filtername", cells[j-1].getAttribute("filtername"), 0);
+            }
+            cells[t].setAttribute("width", temp, 0);
+            cells[t].setAttribute("title", sTitle, 0);
+            cells[t].setAttribute("filtername", sFiltername, 0);
+
+            //transfer the column alignments by swapping class names of the COL tags
+            if (coll.length==rows[0].cells.length) {
+                temp = coll[s].className;
+                for (j=s; j>t; j--) {
+                    coll[j].className = coll[j-1].className;
+                }
+                coll[t].className = temp;
+            }
+        }
+    }else if(truncateCells) { //truncate cells after column resize
+        oColHead.runtimeStyle.backgroundColor = "red";
+        for (i=0; i<numCols; i++) {
+            if (cells(i).runtimeStyle.backgroundColor != "") break;
+        }
+        oColHead.runtimeStyle.backgroundColor = "";
+        truncateData(i);
+        truncateData(numCols-1);
+    }
+    oPointer.style.display = "none";
+    saveColOrder();
+}
+
+function selectAll() {
+    if (!allowMultiSelect || numRows<2) return;
+    for (var i=1; i<numRows; i++) {
+        rows[i].runtimeStyle.backgroundColor = activeSelectionColor;
+    }
+    element.focus();
+}
+
+// called by dblClick event and keypress when key is enter
+function dblClickRow(oRow) {
+    var links = oRow.all.tags("A");
+    for (var i=0; i<links.length; i++) {
+        if (links[i].getAttribute("fireOnDblClick")!=null) {
+            links[i].click();
+            break;
+        }
+    }
+}
+
+//called by colHeadMouseMove to initialize column reorder objects
+function initColReorderObjects() {
+try {
+    if (Math.abs(mouseDownPos-window.event.clientX)<3) return false;
+    oColDummy.innerHTML = oColHead.innerHTML;
+    oColDummy.style.width = oColHead.clientWidth;
+    oColDummy.style.textAlign = oColHead.currentStyle.textAlign;
+    oColDummy.style.paddingLeft = oColHead.currentStyle.paddingLeft;
+    mouseDownPos = mouseDownPos - oColHead.offsetLeft;
+    oColDummy.style.height = cells[0].clientHeight+2;
+    oPointer.style.top = cells[0].clientHeight+2;
+    oPointer.style.display = "block";
+    oColDummy.style.display = "block";
+}catch(e) {return false;}
+    return true;
+}
+
+// truncates the contents of all cells in the specified column if the cell contents is wider than the width of the column
+function truncateData(colIndex) {
+    var sData, sInnerText, temp, l, i;
+    var oTest = oDoc.all.test4Truncation;
+    var oCell = rows[0].cells[colIndex];
+    var colWidth = parseInt(oCell.getAttribute("width")) - 6;
+
+    for (i=0; i<numRows; i++) {
+        oCell = rows[i].cells[colIndex];
+        sInnerText = oCell.innerText;
+        sData = rowArray[i][colIndex];
+        l = sData.length;
+        if (l > 3) {
+            oTest.innerText = sData;
+            if (oTest.offsetWidth > colWidth) {
+                l = l - 2 - parseInt((oTest.offsetWidth - colWidth)/6);
+                temp = rTrim(sData.substring(0, l)) + "...";
+                oTest.innerText = temp;
+                while (oTest.offsetWidth > colWidth && l > 1) {
+                    l -= 1;
+                    temp = rTrim(sData.substring(0, l)) + "...";
+                    oTest.innerText = temp;
+                }
+                oCell.innerHTML = oCell.innerHTML.replace(sInnerText, temp);
+            }else if(sInnerText != sData) {
+                oCell.innerHTML = oCell.innerHTML.replace(sInnerText, sData);
+            }
+        }
+    }
+    oTest.innerText = "";
+}
+
+function untruncateAll() {
+    var oCell, sInnerText, i, j;
+    if (!truncateCells) return;
+
+    for (i=0; i<numRows; i++) {
+        for (j=0; j<numCols; j++) {
+            oCell = rows[i].cells[j];
+            sInnerText = oCell.innerText;
+            if (sInnerText != rowArray[i][j])
+                oCell.innerHTML = oCell.innerHTML.replace(sInnerText, rowArray[i][j]);
+        }
+    }
+}
+</script>
+</public:component>

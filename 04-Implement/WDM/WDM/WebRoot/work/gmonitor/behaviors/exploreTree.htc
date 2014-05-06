@@ -1,0 +1,153 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="init()" for="window" />
+<public:attach event="onclick" onevent="click_event()" />
+
+<script language=JScript>
+var expandImage = "images/openFolder.gif";
+var collapseImage = "images/folder.gif";
+
+var fso = new ActiveXObject("Scripting.FileSystemObject");
+
+function init() {
+    e = new Enumerator(fso.Drives);
+    var temp = "<div path=computer style='cursor:default'><nobr><img src='images/treeMinus.gif'><img src=images/my-computer.gif align=absmiddle> <label>My Computer</label></nobr>";
+    var l, p;
+
+    for (; !e.atEnd(); e.moveNext()) {
+        x = e.item();                 
+        l = x.DriveLetter.toUpperCase();
+        p = "<div style='margin-left:18px; background-image:url(images/treeGridLine.gif); background-repeat:repeat-y' path=" + l + ":\\><nobr><img src='images/treePlus.gif'>";
+        if (x.DriveType == 1) {       //1 removeable
+            temp += p + "<img src=images/floppy-drive.gif align=absmiddle> <label>(" + l + ":)</label></nobr></div>\n"
+        }else if (x.DriveType == 2) { //2 fixed
+            temp += p + "<img src=images/fixed-drive.gif align=absmiddle> <label>(" + l + ":)</label></nobr></div>\n"
+        }else if (x.DriveType == 3) { //3 network
+            temp += p + "<img src=images/network-drive.gif align=absmiddle> <label>(" + l + ":)</label></nobr></div>\n"
+        }else if (x.DriveType == 4) { //4 cd
+            temp += p + "<img src=images/cd-rom.gif align=absmiddle> <label>(" + l + ":)</label></nobr></div>\n"
+        } 
+    }
+
+    temp += "</div>";
+    innerHTML = temp;
+    var coll = all.tags("DIV");
+    coll[coll.length-1].style.backgroundImage = "url(images/treeGridEnd.gif)";
+    coll[coll.length-1].style.backgroundRepeat = "no-repeat";
+}
+
+function click_event() {
+    var oSource = window.event.srcElement;
+    var src = unescape(oSource.src);
+    var node = oSource;
+    var temp = "";
+    var imgs, coll, p;
+
+    if (src.indexOf("treeMinus.gif")>-1 || src.indexOf("treePlus.gif")>-1) { // expand collapse node
+        while (node.tagName!="DIV") node = node.parentElement;
+        if (node.className=="explorerTreeHTC") return;
+        var childNodes = node.children.tags("DIV");
+        imgs = node.all.tags("IMG");
+        p = node.getAttribute("path");
+        
+        if (p != "computer") {
+            try {
+                var f = fso.GetFolder(p);
+            }catch (e) {
+                return;
+            }
+            var fCount = f.SubFolders.count;
+            var fc = new Enumerator(f.SubFolders);
+        }
+        
+        if (src.indexOf("treeMinus.gif")>-1) {
+            oSource.src = "images/treePlus.gif";
+            //if (unescape(imgs[1].src).indexOf(expandImage)>-1) imgs[1].src = collapseImage;
+            for (i=0; i<childNodes.length; i++) {
+                childNodes.item(i).style.display="none";
+            }
+        }else if(src.indexOf("treePlus.gif")>-1) {
+            if (childNodes.length==0) {
+                if (fCount==0) { //no sub folders
+                    oSource.src = "images/treeBlank.gif";
+                    if (node.style.backgroundImage=="url(images/treeGridLine.gif)") node.style.backgroundImage = "url(images/treeGridT.gif)";
+                    return;
+                }
+                for (; !fc.atEnd(); fc.moveNext()) {
+                    x = fc.item();
+                    n = " " + x;
+                    n = "<label>" + n.substring(n.lastIndexOf("\\")+1, n.length) + "</label>";
+                    p = "<div style='margin-left:18px; background-image:url(images/treeGridLine.gif); background-repeat:repeat-y' path='" + x + "'\><nobr><img src='images/treePlus.gif'><img src=images/folder.gif align=absmiddle> " + n + "</nobr></div>\n";
+                    temp += p;
+                }
+                //if (unescape(imgs[1].src).indexOf(collapseImage)>-1) imgs[1].src = expandImage;
+                oSource.src = "images/treeMinus.gif";
+                node.innerHTML += temp;
+                coll = node.children.tags("DIV");
+                coll[coll.length-1].style.backgroundImage = "url(images/treeGridEnd.gif)";
+                coll[coll.length-1].style.backgroundRepeat = "no-repeat";
+            }else {
+                oSource.src = "images/treeMinus.gif";
+                //if (unescape(imgs[1].src).indexOf(collapseImage)>-1) imgs[1].src = expandImage;
+                for (i=0; i<childNodes.length; i++) {
+                    childNodes.item(i).style.display="block";
+                }
+            }
+        }
+    }else {
+        if(node.tagName=="IMG" || node.tagName=="LABEL") node = node.parentElement;
+        if(node.tagName!="NOBR") return;
+        node = node.parentElement;
+        if(node.tagName!="DIV") return;
+        
+        imgs = all.tags("IMG");
+        for (i=0; i<imgs.length; i++) {
+            if (unescape(imgs[i].src).indexOf(expandImage)>-1) {
+                imgs[i].src = collapseImage;
+                break;
+            }
+        }
+        coll = all.tags("LABEL");
+        for (i=0; i<coll.length; i++) {
+            if (coll[i].runtimeStyle.color!="") {
+                coll[i].runtimeStyle.color = "";
+                coll[i].runtimeStyle.backgroundColor = "";
+                break;
+            }
+        }
+        
+        imgs = node.all.tags("IMG");
+        if (unescape(imgs[1].src).indexOf(collapseImage)>-1) imgs[1].src = expandImage;
+        oSource = node.all.tags("LABEL")[0];
+        oSource.runtimeStyle.color = "white";
+        oSource.runtimeStyle.backgroundColor = "blue";
+        p = node.getAttribute("path");
+        window.parent.document.all.mainFrame.src = p;
+        //window.parent.document.all.mainFrame.document.location.href = p;
+    }
+}
+</script>
+</public:component>

@@ -1,0 +1,317 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="init()" for="window" />
+<public:attach event="onmouseover" onevent="mouseOver_event()" for="document" />
+<public:attach event="onmouseout" onevent="mouseOut_event()" for="document" />
+<public:method name="addTab" />
+<public:method name="deleteTab" />
+<public:method name="refreshTab" />
+<public:method name="getNumberTabs" />
+<public:method name="getSelectedIndex" />
+<public:method name="getTab" />
+<public:method name="getTagByName" />
+<public:method name="getTabLabel" />
+
+<script language=JScript>
+var oTabTable, oTabFrame, elementTop, elementHeight, elementLeft, elementWidth, t=0;
+
+function init() {
+    alert("aa");
+    var tabTableId = element.document.uniqueID;
+    var label="", toolTip="", key="", numTabs=0, firstTab="", btnHeight=0, i, j, l;
+    var tabTable = "<table id='"+tabTableId+"' cellpadding=0 cellspacing=0 width="+offsetWidth+"><tr valign=bottom>";
+    var buttons = element.document.all.tags("BUTTON");
+    var tabs = element.all.tags("DIV");
+
+    for (i=0; i<tabs.length; i++) {
+        if (tabs[i].className.toLowerCase()=="tab") numTabs++;
+    }
+    for (i=0; i<tabs.length; i++) {
+        if (tabs[i].className.toLowerCase()=="tab") {
+            t++;
+            toolTip = tabs[i].getAttribute("toolTip", false);
+            toolTip = (toolTip==null)? "":" title=\"" + toolTip + "\"";
+            key = tabs[i].getAttribute("key", false);
+            label = tabs[i].getAttribute("tabLabel", false);
+            if (label==null) label = "Tab " + t;
+            tabs[i].setAttribute("ID", label, 0);
+            if (key!=null) {
+                j = label.toLowerCase().indexOf(key.toLowerCase());
+                if (j>-1)
+                    l = label.substring(0, j) + "<u>" + label.charAt(j) + "</u>" + label.substring(j+1, label.length);
+                else
+                    l = label;
+                key = " accesskey=\"" + key + "\"";
+            }else {
+                l = label;
+                key = "";
+            }
+            if (t==1) {
+                firstTab=label;
+                tabTable+= "<td child=\""+label+"\""+toolTip+key+" class=\"dlgTabActive\" ";
+                tabTable+= "onfocus=\"this.click()\"><nobr>"+l+"</nobr></td>";
+                tabTable+= "<td width=\"7\" class=activeDlgTabRight><img src=\"images/spacer.gif\" height=\"1\" width=\"7\"></td>";
+            }else if(t==numTabs) {
+                tabTable+= "<td child=\""+label+"\""+toolTip+key+" class=\"dlgTab\" ";
+                tabTable+= "onfocus=\"this.click()\"><nobr>"+l+"</nobr></td>";
+                tabTable+= "<td width=\"8\" class=dlgTabRight><img src=\"images/spacer.gif\" height=\"1\" width=\"8\"></td>";
+            }else {
+                tabTable+= "<td child=\""+label+"\""+toolTip+key+" class=\"dlgTab\" ";
+                tabTable += "onfocus=\"this.click()\"><nobr>"+l+"</nobr></td>";
+                tabTable+= "<td width=\"7\" class=dlgTabRight><img src=\"images/spacer.gif\" height=\"1\" width=\"7\"></td>";
+            }
+        }
+    }
+
+    tabTable += "<td class=tabFrameTopBorder width=99%><img src=images/spacer.gif></td></tr></table>";
+    element.insertAdjacentHTML("beforeBegin", tabTable);
+    oTabTable = element.document.getElementById(tabTableId);
+    oTabTable.attachEvent("onclick", click_event);
+    oTabFrame = element.all.tags("TABLE")[0];
+    oTabFrame.setAttribute("className", "tabFrame", 0);
+    oTabFrame.setAttribute("width", "100%", 0);
+    oTabFrame.setAttribute("height", "100%", 0);
+    oTabFrame.setAttribute("cellpadding", "0", 0);
+    oTabFrame.setAttribute("cellspacing", "0", 0);
+    oTabFrame.cells[0].setAttribute("valign", "top", 0);
+
+    elementTop = getClientTop(element);
+    elementLeft = getClientLeft(element);
+    if (element.getAttribute("autoheight")!=null) {
+        i = buttons.length;
+        if (i>0) btnHeight = buttons[i-1].offsetHeight + parseInt(buttons[i-1].currentStyle.marginTop);
+        if (btnHeight<38) btnHeight=38;
+        element.style.height = element.document.body.offsetHeight - elementTop - btnHeight - 8; //8 is the bottom margin
+    }
+    elementHeight = element.offsetHeight;
+    elementWidth = element.offsetWidth;
+    element.all(firstTab).runtimeStyle.display="block";
+    sizeIFrames(element.all(firstTab));
+}
+
+function sizeIFrames(tab) {
+    var btnHeight=0, flag, i;
+    var frames = tab.all.tags("IFRAME");
+    var buttons = tab.all.tags("BUTTON");
+    if (frames.length==0) return;
+    i = buttons.length;
+    if (i>0 && !(i==1 && buttons[0].innerText=="Filter")) {
+        btnHeight = buttons[i-1].offsetHeight + parseInt(buttons[i-1].currentStyle.marginTop);
+        if (btnHeight<28) btnHeight=28;
+    }
+    for (i=0; i<frames.length; i++) {
+        if (frames[i].getAttribute("autoheight")!=null)
+            frames[i].style.height = elementTop + elementHeight - getClientTop(frames[i]) - btnHeight - 18;
+        if (frames[i].getAttribute("autowidth")!=null)
+            frames[i].style.width = elementLeft + elementWidth - getClientLeft(frames[i]) - 18;
+
+    }
+}
+
+function mouseOver_event() {
+try {
+    var tab = window.event.srcElement, cells, i;
+    while (tab.tagName!="TD") {
+        if (tab.tagName=="BODY") return;
+        tab = tab.parentElement;
+    }
+    if (tab.className!="dlgTab") return;
+
+    tab.className = "dlgTabHover";
+    cells = element.document.all.tags("TD");
+    for (i=0; i<cells.length; i++) {
+        if (cells[i].className=="dlgTabHover") {
+            cells[i+1].className = "dlgTabRightHover";
+            break;
+        }
+    }
+}catch(e) {}
+}
+
+function mouseOut_event() {
+try {
+    var tab = window.event.srcElement, cells, i;
+    while (tab.tagName!="TD") {
+        if (tab.tagName=="BODY") return;
+        tab = tab.parentElement;
+    }
+    if (tab.className!="dlgTabHover") return;
+
+    cells = element.document.all.tags("TD");
+    for (i=0; i<cells.length; i++) {
+        if (cells[i].className=="dlgTabHover") {
+            cells[i].className = "dlgTab";
+            cells[i+1].className = "dlgTabRight";
+        }
+    }
+}catch(e) {}
+}
+
+function click_event() {
+    var tab = window.event.srcElement, frame, cells, i;
+    while (tab.tagName!="TD") {
+        if (tab.tagName=="BODY") return;
+        tab = tab.parentElement;
+    }
+    if (tab.className!="dlgTabHover" && tab.className!="dlgTab") return;
+
+    cells = element.document.all.tags("TD");
+    for (i=0; i<cells.length; i++) {
+        cells[i].runtimeStyle.backgroundColor = "";
+        if (cells[i].className=="dlgTabActive") {
+            cells[i].className="dlgTab";
+            frame = element.all(cells[i].getAttribute("CHILD", false));
+            frame.runtimeStyle.display = "none";
+        }else if (cells[i].className=="activeDlgTabRight") {
+            cells[i].className="dlgTabRight";
+        }
+    }
+
+    tab.className="dlgTabActive";
+    for (i=0; i<cells.length; i++) {
+        if (cells[i].className=="dlgTabActive") {
+            cells[i+1].className="activeDlgTabRight";
+            break;
+        }
+    }
+    frame = element.all(tab.getAttribute("CHILD", false));
+    frame.runtimeStyle.display="block";
+    sizeIFrames(frame);
+}
+
+function addTab(htmltxt) {
+    //delete spacer
+    oTabTable.rows[0].removeChild(oTabTable.rows[0].children[oTabTable.rows[0].children.length-1]);
+
+    var cell = oTabFrame.rows[0].cells[0];
+    cell.insertAdjacentHTML("beforeEnd", htmltxt);
+    var tab = cell.children[cell.children.length-1];
+    toolTip = tab.getAttribute("toolTip", false);
+    toolTip = (toolTip==null)? "":" title='" + toolTip + "'";
+    label = tab.getAttribute("tabLabel", false);
+    if (label==null) label = "Tab " + t;
+    tab.setAttribute("ID", label, 0);
+
+    // add new tab
+    var td1 = element.document.createElement("TD");
+    td1.setAttribute("child",label,0);
+    td1.className="dlgTab";
+    td1.innerHTML="<NOBR>"+label+"</NOBR>";
+    td1.setAttribute("title","",0);
+    oTabTable.rows[0].appendChild(td1);
+
+    // add spacer after tab
+    var td2 = element.document.createElement("TD");
+    td2.setAttribute("width","8",0);
+    if (element.getSelectedIndex() == oTabFrame.rows[0].length) {
+        td2.className="activeDlgTabRight";
+    }else {
+        td2.className="dlgTabRight";
+    }
+    td2.innerHTML="<img src=images/spacer.gif height=1 width=8>"
+    oTabTable.rows[0].appendChild(td2);
+
+    // add end spacer
+    var td3 = element.document.createElement("TD");
+    td3.setAttribute("width","99%",0);
+    td3.className="tabFrameTopBorder";
+    td3.innerHTML="<img src=images/spacer.gif>"
+    oTabTable.rows[0].appendChild(td3);
+    selectTab(0);
+}
+
+function deleteTab(index) {
+    var childid = oTabTable.rows[0].children[index].child;
+	//delete tab
+    oTabTable.rows[0].removeChild(oTabTable.rows[0].children[index]);
+	//delete spacer
+    oTabTable.rows[0].removeChild(oTabTable.rows[0].children[index]);
+	//remove div
+    var divtab= element.all[childid];
+    divtab.parentElement.removeChild(divtab);
+    selectTab(0);
+}
+
+function getSelectedIndex() {
+    var cells = oTabTable.rows[0].cells;
+    for (i=0; i<cells.length; i++) {
+        if (cells[i].className=="dlgTabActive") {
+            return i;
+        }
+    }
+}
+
+function getNumberTabs() {
+    if (oTabTable==null)
+        return 0;
+    return oTabTable.rows[0].cells.length;
+}
+
+function getTagByName(childid) {
+    return element.document.all[childid];
+}
+
+function getTab(index) {
+    var childid = oTabTable.rows[0].cells[index].child;
+    return element.all[childid];
+}
+
+function getTabLabel(index) {
+    return oTabTable.rows[0].cells[index].innerText;
+}
+
+function selectTab(index) {
+    var cells = oTabTable.rows[0].cells, i;
+    for (i=0; i<cells.length-1; i+=2) {
+        cells[i].className="dlgTab";
+        cells[i+1].className="dlgTabRight";
+    }
+    cells[index].className="dlgTabActive";
+    cells[index+1].className="activeDlgTabRight";
+    /*
+    for (i=0; i<cells.length; i++) {
+        if (i==index) {
+            cells[i].className="dlgTabActive";
+        }else if(cells[i].length==0) {
+            cells[i].className="dlgTab";
+        }
+    }*/
+}
+
+function refreshTab(index) {
+    var cells = oTabTable.rows[0].cells, i, frame;
+    for (i=0; i<cells.length; i++) {
+        if (i==index) {
+            tab=cells[i];
+            break;
+        }
+    }
+    frame = element.all(tab.getAttribute("CHILD", false));
+    frame.runtimeStyle.display="block";
+}
+
+</script>
+</public:component>

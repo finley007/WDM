@@ -1,0 +1,123 @@
+<!-- ---------------------------------------------------------------------
+//
+//  Copyright 2003 Vitria.  All Rights Reserved.
+//
+//  File:         xmltree.htc
+//
+//  Description:   
+//
+//-------------------------------------------------------------------- -->
+
+<public:attach event="onload" onevent="init()"  for="window" />
+<public:method name="setSelectedNode" />
+<public:method name="changeNodeText" />
+
+<script language="javascript">
+
+//------------------------------------------------------------------------
+// Attach to events and setup global variables
+//------------------------------------------------------------------------
+
+var nodecount = 0;
+var alldomnodes = new Array;
+var selectedid = 0;
+var readonly = "";
+var attrImg = "<img src=images/xmlAttribute.gif align=absmiddle onClick=fireLink() onMouseOver=setCursor()> ";
+var nodeImg = "<img src=images/xmlNode.gif align=absmiddle onClick=fireLink() onMouseOver=setCursor()> ";
+
+function init(){
+    if (element.readonly != null){
+        readonly = " readonly style=\"background-color:rgb(225,225,225)\" ";
+    }
+    element.varDom = new XMLDoc( element.innerText, element.xmlError );
+    html = "<div folderTree=true showLines=true>";
+    html += walkNode(element.varDom.docNode);
+    html += "</div>";
+    element.innerHTML = html;
+    element.children[0].addBehavior("behaviors/listTree.htc");
+    element.style.visibility='visible';
+    //alert("XML Tree HTML = " + html);
+}
+
+function walkNode(n){
+    html = "";
+    if (n.children != null ){
+        html += "<div domid = '"+nodecount+"'>"; //+getLabel(n.tagName,nodecount)+" ";
+        alldomnodes[nodecount] = n; 
+        if (n.children.length == 1 && n.children[0].nodeType == "TEXT" ){
+            var id = element.id+"_"+nodecount;
+            html += nodeImg + getLabel(n.tagName,nodecount)+" ";
+            html += "<input class=xmlTreeField "+readonly+" id=\""+id+"\"value='"+n.children[0].getText()+"' onChange='javascript:document.all."+element.id+".changeNodeText("+nodecount+",\""+id+"\");'/>";
+            //alert("html = " + html);
+        }else {
+            html += getLabel(n.tagName,nodecount)+" <input class=xmlTreeField readonly style='background-color:rgb(204,204,204)'>";
+            html += walkAttributes(n,nodecount);
+            for (var i=0; i<n.children.length; i++) {
+                nodecount++;
+                html += walkNode(n.children[i]);
+            }
+	   }
+	   html += "</div>";
+    // VITR003020 display Singleton, too
+    }else if (n.children==null && n.nodeType=='SINGLE'){
+	if (n.getAttributeNames().length==0){
+        html += "<div domid = '"+nodecount+"'>"; //+getLabel(n.tagName,nodecount)+" ";
+        alldomnodes[nodecount] = n; 
+            var id = element.id+"_"+nodecount;
+            html += nodeImg + getLabel(n.tagName,nodecount)+" ";
+            html += "<input class=xmlTreeField "+readonly+" id=\""+id+"\"value='' />"; //onChange='javascript:document.all."+element.id+".changeNodeText("+nodecount+",\""+id+"\");'
+
+	}else{
+        html += "<div domid = '"+nodecount+"'>"; //+getLabel(n.tagName,nodecount)+" ";
+        alldomnodes[nodecount] = n; 
+
+	html += getLabel(n.tagName,nodecount)+" <input class=xmlTreeField readonly style='background-color:rgb(204,204,204)'>";
+        html += walkAttributes(n,nodecount);
+	}
+	   html += "</div>";
+    }
+
+    return html;
+}
+
+function walkAttributes(n,nodeid){
+    attrhtml = "";
+    attrnames = n.getAttributeNames();
+    for (var i = 0; i < attrnames.length; i++) {
+        var id = element.id+"_"+nodeid+"_"+attrnames[i];
+        value = "<input class=xmlTreeField "+readonly+" id=\""+id+"\" name=\""+attrnames[i]+"\" value='"+n.getAttribute(attrnames[i])+"' onChange='javascript:document.all."+element.id+".changeNodeText("+nodeid+",\""+id+"\");'/>";
+        attrhtml += "<div>"+attrImg+getLabel(attrnames[i],nodeid)+" " + value+ "</div>";
+        //alert("attr html = " + attrhtml);
+    }
+    return attrhtml;
+}
+
+function getLabel(n,nodeid){
+	html = "<a href='javascript:document.all."+element.id+".setSelectedNode("+nodeid+");' class='treeLink'>"+n+"</a>";
+	return html;
+}
+
+function xmlError(e) {
+    alert("There has been an error accessing the XML Database. The error is:\n" + e)
+}
+
+function setSelectedNode(nodeid){
+	selectedid = nodeid;
+	//alert("sub-tree = " + getSelectedDomNode().getUnderlyingXMLText());
+}
+
+function getSelectedDomNode(){
+	return alldomnodes[selectedid];
+}
+
+function changeNodeText(nodeid,inputid){
+	var value = element.all[inputid].value;
+	var node = alldomnodes[nodeid];
+	if ( element.all[inputid].name != null && element.all[inputid].name.length > 0){
+		node.attributes["_"+element.all[inputid].name] = value;
+	} else {
+		node.children[0].content = value;
+	}
+}
+
+</script>

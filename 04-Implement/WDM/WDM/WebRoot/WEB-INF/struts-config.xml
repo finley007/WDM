@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN"
+ "struts-config_1_2.dtd">
+<struts-config>
+  <!-- ========== Data Sources Definitions =================================== -->
+  <!-- ========== Form Bean Definitions =================================== -->
+  <form-beans>
+    <form-bean name="DashBoardForm"	type="com.wdm.form.DashBoardForm" />
+    <form-bean name="SystemForm"	type="com.wdm.form.SystemForm" />
+    <form-bean name="WlanForm"	type="com.wdm.form.WlanForm" />
+    <form-bean name="SecurityForm"	type="com.wdm.form.SecurityForm" />
+    <form-bean name="RadioBasicForm"	type="com.wdm.form.RadioBasicForm" />
+    <form-bean name="RadioAdvancedForm"	type="com.wdm.form.RadioAdvancedForm" />
+  </form-beans>
+  
+  <!-- ========== Global Exceptions Definitions =================================== -->
+    <!--
+	<global-exceptions>
+        <exception type="java.lang.Exception"
+            key="errors.general"
+            handler="com.tts.webapp.exception.ActionExceptionHandler"
+            path="/app_error.jsp"
+            />
+    </global-exceptions>
+  -->
+  
+  <!-- ========== Global Forward Definitions =================================== -->
+    <global-forwards>
+    	 <forward name="showMessage" path="/Pages/Prompt.jsp"/>
+    </global-forwards>
+  
+  <!-- ========== Action Mapping Definitions =================================== -->
+  <action-mappings>
+	<action path="/AuditAdmin" type="com.wdm.action.AutheticationAction" scope="request" parameter="method" name="auditForm">
+		<forward name="login" path="/work/gmonitor/Login.jsp" redirect="false"/>
+		<forward name="main" path="/work/gmonitor/frameset.jsp" redirect="true"/>
+	</action>
+  </action-mappings>
+  
+  <action-mappings>
+	<action path="/System" type="com.wdm.action.SystemAction" scope="request" parameter="method" name="SystemForm">
+		<forward name="accountList" path="/work/gmonitor/system/SystemAccountInfoMain.jsp" redirect="false"/>
+		<forward name="accountInfo" path="/work/gmonitor/system/SystemAccountInfo.jsp" redirect="false"/>
+		<forward name="snmpConfig" path="/work/gmonitor/system/SNMPConfiguration.jsp" redirect="false"/>
+		<forward name="softUpdateConfig" path="/work/gmonitor/system/SoftUpdateParamsConfig.jsp" redirect="false"/>
+		<forward name="updateVersion" path="/work/gmonitor/system/UpdateVersionMain.jsp" redirect="false"></forward>
+		<forward name="addUpdateVersion" path="/work/gmonitor/system/AddUpdateVersion.jsp" redirect="false"></forward>
+	</action>
+  </action-mappings>
+  
+  <action-mappings>
+	<action path="/DashBoard" type="com.wdm.action.DashBoardAction" scope="request" parameter="method" name="DashBoardForm">
+		<forward name="deviceList" path="/work/gmonitor/function/APStatusMain.jsp" redirect="false"/>
+		<forward name="deviceConfig" path="/work/gmonitor/function/APConfig.jsp" redirect="false"/>
+		<forward name="deviceDetail" path="/work/gmonitor/function/NetInfoConfig.jsp" redirect="false"/>
+		<forward name="deviceAlertList" path="/work/gmonitor/function/DeviceAlertInfoMain.jsp" redirect="false"/>
+		<forward name="deviceQuery" path="/work/gmonitor/function/DeviceInfoQuery.jsp" redirect="false"/>
+		<forward name="alertQuery" path="/work/gmonitor/function/DeviceAlertInfoQuery.jsp" redirect="false"/>
+		<forward name="ipDetect" path="/work/gmonitor/function/DeviceIPDetect.jsp" redirect="false"/>
+		<forward name="deviceSoftUpdate" path="/work/gmonitor/function/DeviceSoftUpdate.jsp" redirect="false"/>
+		<forward name="appGroupList" path="/work/gmonitor/function/APGroup.jsp" redirect="false"/>
+		<forward name="addApGroup" path="/work/gmonitor/function/AddApGroup.jsp" redirect="false"/>
+		<forward name="wlanGroupList" path="/work/gmonitor/function/WlanGroup.jsp" redirect="false"/>
+		<forward name="addWlanGroup" path="/work/gmonitor/function/AddWlanGroup.jsp" redirect="false"/>
+		<forward name="wlanList" path="/work/gmonitor/function/WlanBaseInfoMain.jsp" redirect="false"/>
+		<forward name="wlanSecurityList" path="/work/gmonitor/function/WlanSecurityBaseInfoMain.jsp" redirect="false"/>
+		<forward name="userList" path="/work/gmonitor/function/UserList.jsp" redirect="false"/>
+		<forward name="flowStatistic" path="/work/gmonitor/function/FlowStatistic.jsp" redirect="false"/>
+		<forward name="changeApGroup" path="/work/gmonitor/function/ChangeApGroup.jsp" redirect="false"/>
+	</action>
+  </action-mappings>
+  
+  <action-mappings>
+	<action path="/Wlan" type="com.wdm.action.WlanAction" scope="request" parameter="method" name="WlanForm">
+		<forward name="addWlan" path="/work/gmonitor/function/AddWlan.jsp" redirect="false"/>
+		<forward name="wlanList" path="/work/gmonitor/function/WlanBaseInfoMain.jsp" redirect="false"/>
+		<forward name="groupedWlan" path="/work/gmonitor/function/WlanGroupConfig.jsp" redirect="false"/>
+	</action>
+  </action-mappings>
+  
+  <action-mappings>
+	<action path="/Security" type="com.wdm.action.SecurityAction" scope="request" parameter="method" name="SecurityForm">
+		<forward name="addSecurity" path="/work/gmonitor/function/AddSecurity.jsp" redirect="false"/>
+		<forward name="wlanSecurityList" path="/work/gmonitor/function/WlanSecurityBaseInfoMain.jsp" redirect="false"/>
+	</action>
+  </action-mappings>
+  
+  <action-mappings>
+	<action path="/BasicRadio" type="com.wdm.action.RadioBasicAction" scope="request" parameter="method" name="RadioBasicForm">
+		<forward name="basicInfo" path="/work/gmonitor/function/RadioBasicConfig.jsp" redirect="false"/>
+		<forward name="channelInfo" path="/work/gmonitor/function/RadioChannelConfig.jsp" redirect="false"/>
+	</action>
+  </action-mappings>
+  
+  <action-mappings>
+	<action path="/AdvancedRadio" type="com.wdm.action.RadioAdvancedAction" scope="request" parameter="method" name="RadioAdvancedForm">
+		<forward name="advancedInfo" path="/work/gmonitor/function/RadioAdvancedConfig.jsp" redirect="false"/>
+	</action>
+  </action-mappings>
+     
+  <message-resources parameter="ApplicationResources_zh_cn"/>
+  <!-- ========== Validator plugin ===================  -->
+  <!-- ========== Menu plugin ======================== -->
+</struts-config>

@@ -1,0 +1,162 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+/*
+ * Creates a treeview from nested <DIV> tags
+ *
+ *   showLines    if true, tree displays grid lines
+ *   static       if true, tree cannot be collapsed and is always expanded
+ *   expandImg    source of expanded node image
+ *   collpaseImg  source of collapsed node image
+ *   leafImg      source of leafe image
+ *   folderTree   if true, overrides expandedImg and collpaseImg and uses open and closed folders
+ */
+<public:attach event="onload" onevent="init()" for="window" />
+<public:attach event="onclick" onevent="click_event()" />
+<public:method name="expandTree" />
+<public:method name="collapseTree" />
+<public:property name="showLines" />
+<public:property name="folderTree" />
+<public:property name="static" />
+<public:property name="expandImg" />
+<public:property name="collapseImg" />
+<public:property name="leafImg" />
+
+<script language=JScript>
+var drawLines = (showLines==null)? true : (showLines.toLowerCase()=="true");
+var leafImage = (leafImg==null)? ""  : '<img src="'+leafImg+'" align=absmiddle border=0 onClick=fireLink() onMouseOver=setCursor()> ';
+var staticTree = (static==null)? false  : (static.toLowerCase()=="true");
+var expandImage = (expandImg==null)? ""  : expandImg;
+var collapseImage = (collapseImg==null)? ""  : collapseImg;
+var treeGridImg = "url(images/treeGrid.gif)";
+var treeGridEndImg = "url(images/treeGridEnd.gif)";
+if (folderTree!=null) {
+    if (folderTree.toLowerCase()=="true") {
+        expandImage="images/openFolder.gif";
+        collapseImage="images/folder.gif";
+    }
+}
+if (staticTree) {
+    style.position = "relative";
+    style.left = "-15px";
+}
+
+//if only expandImage or collapseImage but not the other was specified, set the other equal to spacer.gif
+if (expandImage=="" && collapseImage!="") expandImage = "images/spacer.gif";
+if (expandImage!="" && collapseImage=="") collapseImage = "images/spacer.gif";
+
+function init() {
+    var imgTag = (expandImage=="")? "" : '<img src="'+expandImage+'" onClick=fireLink() onMouseOver=setCursor()> ';
+    var nodeImg = (staticTree)? '<img src="images/treeBlank.gif">' : '<img src="images/treeMinus.gif">';
+    var childNodes, numChildren, oChild, oNobr, i, j;
+    var nodes = element.all.tags("DIV");
+
+    for (i=0; i<nodes.length; i++) { 
+        oNobr = nodes[i].children.tags("NOBR")[0];
+        childNodes = nodes[i].children.tags("DIV");
+        numChildren = childNodes.length;
+        
+        if (numChildren > 0) {
+            if (imgTag!="") oNobr.insertAdjacentHTML("afterBegin", imgTag);
+            oNobr.insertAdjacentHTML("afterBegin", nodeImg);
+            
+            for (j=0; j<numChildren; j++) {
+                oChild = childNodes[j];
+                oChild.style.marginLeft = "18px"; 
+                if (drawLines) { 
+                    oChild.style.backgroundImage  = (j<numChildren-1)? treeGridImg : treeGridEndImg;
+                    oChild.style.backgroundRepeat = (j<numChildren-1)? "repeat-y"  : "no-repeat";
+                }  
+            }
+        }else { //terminating leaf node
+            oNobr.insertAdjacentHTML("afterBegin", leafImage);
+            oNobr.insertAdjacentHTML("afterBegin", '<img src="images/treeBlank.gif">');
+        }
+    }
+}
+
+function click_event() {
+    var oSource = window.event.srcElement, i;
+    
+    if (oSource.tagName=="IMG") { // expand or collapse node
+        var oNode = oSource;
+        while (oNode.tagName!="DIV") oNode=oNode.parentElement;
+        if (oNode==element) return;
+        var childNodes = oNode.children.tags("DIV");
+        var folderImg = oNode.all.tags("IMG")[1];
+        
+        if (oSource.src.indexOf("treeMinus.gif")>-1) {
+            oSource.src = "images/treePlus.gif";
+            if (collapseImage!="") folderImg.src = collapseImage;
+            for (i=0; i<childNodes.length; i++) {
+                childNodes[i].style.display="none";
+            }
+        }else if(oSource.src.indexOf("treePlus.gif")>-1) {
+            oSource.src = "images/treeMinus.gif";
+            if (expandImage!="") folderImg.src = expandImage;
+            for (i=0; i<childNodes.length; i++) {
+                childNodes[i].style.display="block";
+            }
+        }     
+    }else if(oSource.tagName=="A") { // highlight node
+        var links=element.all.tags("A"), n=links.length;
+        for (i=0; i<n; i++) {
+            if (links[i].style.backgroundColor!="") {
+                links[i].style.backgroundColor = ""
+                links[i].style.border = "";
+                links[i].style.color = "";
+                break;
+            }
+        }
+        oSource.style.backgroundColor = "rgb(215,226,253)"; 
+        oSource.style.border = "1 solid rgb(97,134,220)";
+        oSource.style.paddingRight = "1px";
+        oSource.blur();
+    }
+}
+
+/*
+ * Expand all nodes in the tree
+ */
+function expandTree() {
+    var images = element.all.tags("IMG"), n=images.length, i;
+    
+    for (i=0; i<n; i++) {
+        if (images[i].src.indexOf("treePlus.gif")>-1) images[i].click();
+    }
+}
+
+/*
+ * Collapse all nodes in the tree
+ */
+function collapseTree() {
+    var images = element.all.tags("IMG"), n=images.length, i;
+    
+    for (i=0; i<n; i++) {
+        if (images[i].src.indexOf("treeMinus.gif")>-1) images[i].click();
+    }
+}
+</script>
+</public:component>

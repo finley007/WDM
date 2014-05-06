@@ -1,0 +1,107 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:property name="start" />
+<public:property name="end" />
+<public:property name="total" />
+<public:property name="listframe" />
+<public:property name="relativeUrl" />
+<public:method name="redisplay" />
+
+<script language=JScript>
+var s = (start==null)? "1" : start;
+var e = (end==null)? "50" : end;
+var t = (total==null)? "50" : total;
+var listFrameId = (listframe==null)? "listFrame" : listframe;
+var relUrl = (relativeUrl==null)? "" : relativeUrl;
+var temp = "";
+var temp2 = "";
+
+function init() {
+    setAttribute("cellpadding", "0", 0);
+    setAttribute("cellspacing", "0", 0);
+    
+    insertRow();
+    rows[0].insertCell();
+    cells[0].innerHTML = "<nobr>"+ formatMessage(getMessage("js_pagination_x"), s, e) +"</nobr>";
+    cells[0].style.paddingRight = "2px";
+    
+    if (parseInt(s) > 1) {
+
+        temp2 = '<img onclick="goPrevPage(' + s + ',' + e + ',' + listFrameId + ')" class=hoverBtnHTC src="' + relUrl + 'images/paginatePrev.gif" alt="' + getMessage("js_pagination_previous_title") + '">';
+    }else {
+
+        temp2 = '<img src="' + relUrl + 'images/paginatePrevx.gif" alt="' + getMessage("js_pagination_previous_title") + '" style="margin: 1px">';
+    }
+    rows[0].insertCell();
+    cells[1].innerHTML = temp2;
+    
+    if (parseInt(e) < parseInt(t)) {
+        temp = '<img onclick="goNextPage(' + s + ',' + e + ',' + listFrameId + ')" class=hoverBtnHTC src="' + relUrl + 'images/paginateNext.gif" alt="' + getMessage("js_pagination_next_title") + '">';
+
+    }else {
+        temp = '<img src="' + relUrl + 'images/paginateNextx.gif" alt="' + getMessage("js_pagination_next_title") + '" style="margin: 1px">';
+
+    }
+    rows[0].insertCell();
+    cells[2].innerHTML = temp;
+
+}
+
+function redisplay(firstItem, lastItem, totalItems) {
+    s = (firstItem==null)? "1" : firstItem;
+    e = (lastItem==null)? "50" : lastItem;
+    t = (totalItems==null)? "50" : totalItems;
+    if (parseInt(totalItems) == 0) {
+        // Either none in list or not paginating this list...keep invisible
+        element.style.visibility = "hidden";
+        return;
+    }
+
+    cells[0].innerHTML = "<nobr>"+ formatMessage(getMessage("js_pagination_x"), s, e) +"</nobr>";
+    
+    var temp;
+    var temp2;
+    if (parseInt(s) > 1) {
+
+        temp2 = '<img onclick="goPrevPage(' + s + ',' + t + ",'" + listFrameId + "'" + ')" class=hoverBtnHTC src="' + relUrl + 'images/paginatePrev.gif" alt="' + getMessage("js_pagination_previous_title") + '">';
+    }else {
+
+        temp2 = '<img src="' + relUrl + 'images/paginatePrevx.gif" alt="' + getMessage("js_pagination_previous_title") + '" style="margin: 1px">';
+    }
+    cells[1].innerHTML = temp2;
+    
+    if (parseInt(e) < parseInt(t)) {
+        temp = '<img onclick="goNextPage(' + s + ',' + t + ",'" + listFrameId + "'" + ')" class=hoverBtnHTC src="' + relUrl + 'images/paginateNext.gif" alt="' + getMessage("js_pagination_next_title") + '">';
+    }else {
+        temp = '<img src="' + relUrl + 'images/paginateNextx.gif" alt="' + getMessage("js_pagination_next_title") + '" style="margin: 1px">';
+    }
+//alert("temp=" + temp);
+    cells[2].innerHTML = temp;
+
+    element.style.visibility = "visible";
+}
+</script>
+</public:component>

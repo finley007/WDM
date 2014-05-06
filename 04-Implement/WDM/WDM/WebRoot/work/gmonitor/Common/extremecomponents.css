@@ -1,0 +1,243 @@
+.eXtremeTable {
+	margin: 0;
+	padding: 0;
+}
+
+.eXtremeTable .tableRegion {
+	border: 1px solid silver;
+	padding: 2px;
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 10px;
+	margin-top: 7px;
+	margin-bottom:7px;
+}
+
+.eXtremeTable .filter {
+	background-color: #efefef;
+}
+
+.eXtremeTable .filter input {
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 10px;
+	width: 100%;
+}
+
+.eXtremeTable .filter select {
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 9px;
+	border: solid 1px #EEE;
+	width: 100%;
+}
+
+.eXtremeTable .tableHeader {
+	font-family: "����";
+	font-size: 12px;
+	color: #FFFFFF;
+	background-image:  url(../images/list_headerbg.gif);
+	background-repeat: repeat-x;
+	height: 24px;
+	vertical-align: middle;
+	border-right-style: solid;
+	border-right-width: 1px;
+	border-color: #ffffff;
+	text-align: center;
+}
+
+.eXtremeTable .tableHeaderSort {
+	font-family: "����";
+	font-size: 12px;
+	color: #FFFFFF;
+	background-image:  url(../images/list_headerbg_over.gif);
+	background-repeat: repeat-x;
+	height: 24px;
+	vertical-align: middle;
+	border-right-style: solid;
+	border-right-width: 1px;
+	border-color: #ffffff;
+	text-align: center;
+}
+
+.eXtremeTable .odd a, .even a {
+	color: Black;
+	font-family: "����";
+	font-size: 12px;
+	height: 12px;
+	vertical-align: middle;
+}
+
+.eXtremeTable .odd td, .eXtremeTable .even td {
+	font-family: "����";
+	font-size: 12px;
+	height: 12px;
+	vertical-align: middle;
+}
+
+.eXtremeTable .odd {
+	background-color: #FFFFFF;
+	height: 10px;
+	border-right-style: solid;
+	border-right-width: 1px;
+	
+	border-color: #CDECFF;
+	text-align: center;
+	font-family: "����";
+	font-size: 12px;
+}
+
+.eXtremeTable .odd2 {
+	background-color: #FFFFFF;
+	height: 10px;
+	border-right-style: solid;
+	border-right-width: 1px;
+	border-bottom-style:solid;
+	border-bottom-width:1px;
+	border-color: #CDECFF;
+	text-align: center;
+	font-family: "����";
+	font-size: 12px;
+}
+
+.eXtremeTable .odd3 {
+	background-color: #FFFFFF;
+	height: 10px;
+	
+	border-bottom-style:solid;
+	border-bottom-width:1px;
+	border-color: #CDECFF;
+	text-align: center;
+	font-family: "����";
+	font-size: 12px;
+}
+
+.eXtremeTable .even {
+  	background-color: #D7F0FF;
+	height: 10px;
+	border-right-style: solid;
+	border-right-width: 1px;
+	border-color: #CDECFF;
+	text-align: center;
+	font-family: "����";
+	font-size: 12px;
+}
+
+.eXtremeTable .highlight td {
+	color: black;
+	font-family: "����";
+	font-size: 12px;
+	height: 10px;
+	vertical-align: middle;
+	background-color:#FFFF00;
+	text-align: center;
+}
+
+.eXtremeTable .highlight a, .highlight a {
+	color: black;
+	font-family: "����";
+	font-size: 12px;
+	height: 10px;
+	vertical-align: middle;
+	text-align: center;
+}
+
+.eXtremeTable .toolbar {
+	background-color: #F4F4F4;
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 9px;
+	margin-right: 1px;
+	border-right: 1px solid silver;
+	border-left: 1px solid silver;
+	border-top: 1px solid silver;
+	border-bottom: 1px solid silver;
+}
+
+.eXtremeTable .toolbar td {
+	color: #444444;
+	padding: 0px 3px 0px 3px;
+	text-align:center;
+}
+
+.eXtremeTable .separator {
+	width: 7px;
+}
+
+.eXtremeTable .statusBar {
+	background-color: #F4F4F4;
+	font-family: "����";
+	font-size: 12px;
+}
+
+.eXtremeTable .filterButtons {
+	background-color: #efefef;
+	text-align: right;
+}
+
+.eXtremeTable .title {
+	color: #444444;
+	font-weight: bold;
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 15px;
+	vertical-align: middle;
+}
+
+.eXtremeTable .title span {
+	margin-left: 7px;
+}
+
+.eXtremeTable .formButtons {
+	display: block;
+	margin-top: 10px;
+	margin-left: 5px;
+}
+
+.eXtremeTable .formButton {
+	cursor: pointer;
+	font-family: "����";
+	font-size:12px;
+	background-image:  url(../images/accept.gif);
+	color: black;
+	border: outset 0px #ffffff;
+	vertical-align: middle;
+	width: 52px;
+	height: 22px;
+	
+}
+
+.eXtremeTable .tableTotal {
+	background-color: #FFFFFF;
+	border-top: solid 1px Silver;	
+}
+
+.eXtremeTable .tableTotalEmpty {
+	background-color: #FFFFFF;	
+}
+
+.eXtremeTable .frame {
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-top-style: solid;
+	border-right-style: none;
+	border-bottom-style: solid;
+	border-left-style: none;
+	border-top-color: #999999;
+	border-right-color: #999999;
+	border-bottom-color: #999999;
+	border-left-color: #999999;
+}
+
+.eXtremeTable .frame2 {
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: solid;
+	border-top-color: #999999;
+	border-right-color: #999999;
+	border-bottom-color: #999999;
+	border-left-color: #999999;
+}
+

@@ -1,0 +1,557 @@
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+
+/* AF 2.2 - Last Modified 1/25/2005 */
+/*
+ * Body Styles
+ */ 
+.titleBar {
+   	
+    background-color     : #0054A5;
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 0px;
+}
+.titleBarBottom {
+    background-color     : rgb(211,220,234);
+    border-top           : 1 solid rgb(251,253,255);
+}
+.titleBarBottomTopBorder {
+    background-color     : rgb(89,145,229);
+}
+.globalToolbar {
+    vertical-align       : top;
+    padding-top          : 2px; 
+    padding-right        : 18px;
+    color                : white;
+}
+.globalToolbar a {
+    color                : white;
+}
+.leftNav {
+    background-color     : rgb(211,220,234);
+    font-family          : Arial,Tahoma;
+    font-size            : 9pt;
+    margin               : 5px 0px 0px 3px;
+}
+.mainBody {
+    background-image     : url(/af/images/mainBackground.png);
+    background-repeat    : repeat-x;
+    background-color     : rgb(243,242,231);
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 4px 0px 0px 6px;
+    border-left          : 1 solid rgb(81,101,125);
+    border-top           : 1 solid rgb(81,101,125);
+}
+.mainFrame {
+    border-left          : 1 solid rgb(171,186,203);
+    border-top           : 1 solid rgb(171,186,203);
+}
+.dialogBody {
+    background-color     : rgb(235,235,215);
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 8px 8px 0px 8px;
+}
+.msgBoxBody {
+    background-color     : rgb(235,235,215);
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 15px;
+}
+.wizardBody {
+    background-color     : rgb(235,235,215);
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 0px;
+}
+.listBody {
+    background-color     : white;
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 0px; 
+}
+.treeBody {
+    background-color     : white;
+    font-family          : Arial,Tahoma;
+    font-size            : 75%;
+    margin               : 2px 0px 0px 2px;
+}
+.exploreDetail {
+    background-color     : white;
+    font-family          : Arial, Tahoma;
+    font-size            : 75%;
+    margin               : 0px;
+}
+
+/*
+ * Primary Tabs
+ */
+.mainTab {
+    cursor               : hand;
+    background-color     : rgb(217,223,230);
+    background-image     : url(/af/images/mainTab.gif);
+    font-size            : 9pt;
+    border-bottom        : 1px solid rgb(251,253,255);
+    padding              : 2px 4px 1px 8px;
+    word-break           : keep-all;
+}
+.mainTabRight {
+    background-image     : url(/af/images/mainTabRight.gif);
+    background-color     : rgb(217,223,230);
+    border-bottom        : 1 solid rgb(251,253,255);
+}
+.mainTabHover {
+    cursor               : hand;
+    background-color     : rgb(225,223,176);
+    background-image     : url(/af/images/mainTab.gif);
+    font-size            : 9pt;
+    border-bottom        : 1px solid rgb(251,253,255);
+    padding              : 2px 4px 1px 8px;
+    word-break           : keep-all;
+}
+.mainTabHoverRight {
+    background-image     : url(/af/images/mainTabRight.gif);
+    background-color     : rgb(225,223,176);
+    border-bottom        : 1 solid rgb(251,253,255);
+}
+.mainTabActive {
+    cursor               : default;
+    background-color     : rgb(211,220,234);
+    background-image     : url(/af/images/mainTabActive.gif);
+    font-size            : 9pt;
+    padding              : 2px 4px 2px 8px;
+    word-break           : keep-all;
+}
+.mainTabActiveRight {
+    background-image     : url(/af/images/activeTabRight.gif);
+    background-color     : rgb(211,220,234);
+}
+
+/*
+ * Dialog Tabs
+ */
+div.dlgTabHTC {
+    behavior             : url(/af/behaviors/dlgTab.htc);
+    overflow             : hidden;
+    background-color     : FAFAFB;
+    filter               : progid:DXImageTransform.Microsoft.Gradient(gradientType=0,startColorStr=#FAFAFB,endColorStr=#F4F3EE);
+    border-left          : 1px solid rgb(124,136,147);
+    border-bottom        : 1px solid rgb(124,136,147);
+    border-right         : 1px solid rgb(124,136,147);
+}
+div.tab {
+    display              : none;
+    padding              : 15px, 15px, 0px, 15px;
+    overflow             : hidden;
+}
+td.dlgTab {
+    cursor               : default;
+    background-image     : url(/af/images/dlgTab.gif);
+    background-color     : rgb(236,237,232);
+    border-bottom        : 1px solid rgb(124,136,147);
+    padding              : 2px 4px 1px 8px;
+}
+td.dlgTabRight {
+    background-image     : url(/af/images/dlgTabRight.gif);
+    background-color     : rgb(236,237,232);
+    border-bottom        : 1px solid rgb(124,136,147);
+    width                : 4px;
+}
+td.dlgTabHover {
+    cursor               : default;
+    background-image     : url(/af/images/dlgTabActive.gif);
+    background-color     : rgb(236,237,232);
+    border-bottom        : 1px solid rgb(124,136,147);
+    padding              : 2px 4px 1px 8px;
+}
+td.dlgTabRightHover {
+    background-image     : url(/af/images/dlgTabRightHover.gif);
+    background-color     : rgb(236,237,232);
+    border-bottom        : 1px solid rgb(124,136,147);
+}
+td.dlgTabActive {
+    cursor               : default;
+    background-image     : url(/af/images/dlgTabActive.gif);
+    background-color     : rgb(250,250,251);
+    padding              : 2px 4px 1px 8px;
+}
+td.activeDlgTabRight {
+    background-image     : url(/af/images/activeDlgTabRight.gif);
+    background-color     : rgb(250,250,251);
+    width                : 4px;
+}
+td.tabFrameTopBorder {
+    border-bottom        : 1px solid rgb(124,136,147);
+}
+
+/*  
+ * Left Navigation
+ */
+.leftNavItem {
+    cursor               : hand;
+    color                : black;
+    padding              : 2px 0px 2px 4px;
+    margin-bottom        : 2px;
+}
+.leftNavHover {
+    cursor               : hand;
+    color                : black;
+    background-color     : rgb(222,228,242);
+    border               : 1 solid rgb(185,199,219);
+    padding              : 1px 0px 1px 3px;
+    margin-bottom        : 2px;
+}
+.leftNavActive {
+    cursor               : default;
+    color                : black;
+    background-color     : rgb(222,228,242);
+    border               : 1 solid rgb(99,132,182);
+    padding              : 1px 0px 1px 3px;
+    margin-bottom        : 2px;
+}
+.leftNavMenu {
+    display              : none;
+    padding-left         : 8px;
+}
+.leftNavDiv {
+    background-color     : rgb(198,213,243);
+    margin-bottom        : 2px;
+    height               : 1px;
+}
+
+/*
+ * Lists
+ */
+table.listHTC {
+    behavior             : url(/af/behaviors/list.htc);
+    table-layout         : fixed;
+    text-overflow        : ellipsis;
+    overflow             : hidden;
+    cursor               : default;
+    visibility           : hidden;
+}
+table.simpleListHTC {
+    behavior             : url(/af/behaviors/simpleList.htc);
+}
+tr.listHead {
+    background-color     : rgb(226,224,203);
+    position             : relative;
+}
+.colHead {
+    border-top           : 1px solid white;
+    border-left          : 1px solid white;
+    border-right         : 1px solid rgb(128,128,128);
+    border-bottom        : 1px solid rgb(128,128,128);
+    padding-top          : 0px;
+    background-image     : url(/af/images/colHeadBackground.gif);
+    background-repeat    : repeat-x;
+    background-position-y: expression(clientHeight-1);
+}
+.flatColHead {
+	background-color     : rgb(226,224,211);
+    border-top           : 1px solid rgb(226,224,211);
+    border-left          : 1px solid rgb(226,224,211);
+    border-right         : 1px solid rgb(128,128,128);
+    border-bottom        : 1px solid rgb(128,128,128);
+    padding-top          : 0px;
+    
+}
+col.numberCol {
+    text-align           : right;
+    padding-top          : 2px;
+    padding-right        : 6px;
+}
+col.textCol {
+    text-align           : left;
+    padding-top          : 2px;
+    padding-left         : 4px;
+}
+col.dateCol {
+    text-align           : left;
+    padding-top          : 2px;
+    padding-left         : 4px;
+}
+col.timeCol {
+    text-align           : left;
+    padding-top          : 2px;
+    padding-left         : 4px;
+}
+col.iconCol {
+    text-align           : center;
+}
+.listTitle {
+    margin-bottom        : 2px;
+}
+.listToolbar {
+    padding-bottom       : 2px;
+    cursor               : default;
+    height               : 22px;
+    vertical-align       : bottom;
+}
+.pickListTitle {
+    margin-bottom        : 5px;
+}
+.instructionalText {
+    margin-bottom        : 10px;
+}
+
+/*
+ * Wizards
+ */
+.wizardTitle {
+    padding-left         : 20px;
+    padding-right        : 10px; 
+    padding-top          : 10px;
+}
+.wizardInterrior {
+    padding-left         : 30px;
+    padding-right        : 30px; 
+    padding-top          : 20px;
+}
+.wizardStep {
+    font-weight          : bold;
+}
+.wizardInstruction {
+    padding-left         : 15px;
+}
+.welcomePage {
+    background-color     : white;
+    padding-left         : 10px;
+    padding-top          : 25px;
+}
+.welcomeTitle {
+    font-size            : 180%;
+    padding-bottom       : 20px;
+}
+
+/*
+ * Forms
+ */
+button {
+    behavior             : url(/af/behaviors/button.htc);
+    padding              : 1px 0px 0px 0px;
+    margin               : 5px 0px 0px 6px;
+    font-family          : Arial,Tahoma;
+    font-size            : 9pt;
+    width                : 75px;
+}
+button.dlgBtn {
+    margin-top           : 15px;
+}
+button.wizBtn {
+    margin-top           : 11px;
+}
+.requiredLabel {
+    background-image     : url(/af/images/required_field.gif);
+    background-repeat    : no-repeat;
+    padding-left         : 12px;
+}
+.requiredErrLabel {
+    background-image     : url(/af/images/err_required.gif);
+    background-repeat    : no-repeat;
+    padding-left         : 12px;
+    color                : rgb(196,0,0);
+}
+.errLabel {
+    background-image     : url(/af/images/fieldError.gif);
+    background-repeat    : no-repeat;
+    padding-left         : 12px;
+    color                : rgb(196,0,0);
+}
+.normalLabel {
+    padding-left         : 12px;
+}
+.normalErrLabel {
+    background-image     : url(/af/images/err_normal.gif);
+    background-repeat    : no-repeat;
+    padding-left         : 12px;
+    color                : rgb(196,0,0);
+}
+.readonly {
+    behavior             : url(/af/behaviors/readonly.htc);
+    background-image     : url(/af/images/readOnlyBackground.gif);
+    cursor               : default;
+}
+select.comboBoxHTC {
+    behavior             : url(/af/behaviors/comboBox.htc);
+}
+input.maskHTC {
+    behavior             : url(/af/behaviors/mask.htc);
+}
+input.xmlTreeField {
+    position             : absolute;
+    border               : 1px solid gray;
+    font-face            : arial;
+    font-size            : 9pt;
+    height               : 19;
+    left                 : 220px;
+    padding-top          : 3px;
+    width                : 250px;
+}
+textarea {
+    font-family          : Arial,Tahoma;
+}
+
+/*
+ * Calendar
+ */
+table.calPopUp {
+    font-family          : arial;
+    font-size            : 9pt;
+    border               : 1px solid black;
+    padding              : 0px;
+    cursor               : default;
+    visibility           : hidden;
+    position             : absolute;
+}
+table.calBody {
+    font-family          : arial;
+    font-size            : 9pt;
+    background-color     : rgb(249,249,250);
+    text-align           : center;
+    padding              : 0px;
+}
+table.calYearHead {
+    font-family          : arial;
+    font-size            : 9pt;
+    color                : white;
+    padding              : 1px 1px 0px 0px;
+    cursor               : default;
+}
+td.calHead {
+    background-color     : rgb(44,147,255);
+    border-bottom        : 1 solid rgb(0,79,157);
+    padding              : 0px;
+}
+td.day {
+    padding              : 1px 3px 1px 3px;
+    cursor               : hand;
+}
+td.grayDay {
+    padding              : 1px 3px 1px 3px;
+    cursor               : hand;
+    color                : rgb(150,150,150);
+}
+td.today {
+    cursor               : hand;
+    text-align           : center;
+    color                : navy;
+}
+span.month {
+    cursor               : hand;
+}
+span.year {
+    cursor               : hand;
+}
+
+/*
+ * General
+ */
+iframe {
+    border-top           : 1px solid rgb(64,64,64);
+    border-left          : 1px solid rgb(64,64,64);
+    border-right         : 1px solid rgb(212,208,200); 
+    border-bottom        : 1px solid rgb(212,208,200);
+}
+table {
+     font-size            : 100%;
+}
+a {
+    text-decoration      : none;
+    color                : blue;
+}
+a:hover {
+    text-decoration      : underline;
+}
+div.treeHTC {
+    behavior             : url(/af/behaviors/tree.htc);
+}
+div.paginateHTC {
+    behavior             : url(/af/behaviors/paginateDiv.htc);
+    height               : 22px;
+}
+.tbrBtn {
+    behavior             : url(/af/behaviors/tbrBtnFloat.htc);
+    filter               : progid:DXImageTransform.Microsoft.BasicImage(Rotation=0,Mirror=0,Invert=1,XRay=1,Grayscale=0,Opacity=.35,enabled=false);
+    padding              : 3px 1px 1px 3px;
+    height               : 22px;
+    width                : 23px;
+    overflow             : hidden;
+    cursor               : default;
+}
+.tbrBtn img {
+    filter               : progid:DXImageTransform.Microsoft.Alpha(opacity=75,enabled=false) progid:DXImageTransform.Microsoft.DropShadow(color=#909DB2,offX=2,offY=2);
+}
+img.hoverBtnHTC {
+    margin               : 1px;
+    cursor               : hand;
+    behavior             : url(/af/behaviors/hoverBtn.htc);
+}
+div.filterHTC {
+    position             : absolute;
+    visibility           : hidden;
+    background-color     : rgb(235,235,215);
+    border               : 2px outset;
+    behavior             : url(/af/behaviors/filter.htc);
+}
+/* not currently in use
+div.basicFilterHTC {
+    position             : absolute;
+    visibility           : hidden;
+    background-color     : rgb(235,235,215);
+    border               : 2px outset;
+    behavior             : url(/af/behaviors/basicFilter.htc);
+}*/
+
+/*
+ * Depreciated styles included for backward compatibility
+ */
+a.treeLink {            /* links should be replaced with labels in trees */
+    color                : black;
+    text-decoration      : none;
+}
+a.treeLink:HOVER {
+    color                : black;
+    text-decoration      : underline;
+}
+table.paginateHTC {     /* should use Div.paginateHTC */
+    behavior             : url(/af/behaviors/paginate.htc);
+}
+table.filterBar {       /* has been replaced by toolbar buttons */
+    cursor               : hand;
+    padding-left         : 3px;
+    padding-right        : 3px;
+    text-align           : center;
+    font-size            : 9pt;
+}
+td.filterOn {
+    background-color     : rgb(204,217,244);
+    border               : 1px solid rgb(97,134,220);
+}
+td.filterOff {
+    border               : 1px solid silver;
+}

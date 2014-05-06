@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2007 Vitria Technology, Inc. -->
+
+<project name="WDM" basedir="." default="build-java" >
+  	<description>WDM build</description>
+	<property name="server_location"    location="D:\Tomcat 6.0" />
+	<property name="app.dir" location="${basedir}/WDM" />
+  	<property name="src.dir" location="${app.dir}/src" />
+	<property name="lib.dir" location="${app.dir}/WebRoot/WEB-INF/lib" />
+	<property name="tomcat.dir"  location="${server_location}/webapps/WDM" />
+
+  	<target name="cp-db-conf-file">
+		<copy todir="${app.dir}/classes" overwrite="true">            
+			<fileset dir="${src.dir}" >
+				<include name="application.properties"/> 
+				<include name="applicationContext.xml"/>
+				<include name="log4j.properties"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<path id="srcpath">
+	    <pathelement location="${src.dir}"/>
+	</path>
+	
+	<path id="classpath">
+		<pathelement location="${env.CLASSPATH}"/>
+	    <pathelement location="${lib.dir}/servlet-api.jar"/>
+		<pathelement location="${lib.dir}/struts.jar"/>
+		<pathelement location="${lib.dir}/spring.jar"/>
+		<pathelement location="${lib.dir}/log4j-1.2.9.jar"/>
+		<pathelement location="${lib.dir}/extremecomponents-1.0.1.jar"/>
+		<pathelement location="${lib.dir}/jaxen-1.1.1.jar"/>
+		<pathelement location="${lib.dir}/dom4j-1.6.1.jar"/>
+	</path>
+	
+	<target name="build-java" depends="cp-db-conf-file">
+	 	<mkdir dir="${app.dir}/classes"/>
+		<delete includeemptydirs="true" failonerror="true">
+			<fileset dir="${app.dir}/classes" includes="**/*"/>
+		</delete>
+	    <javac classpathref="classpath" destdir="${app.dir}/classes" debug="on" fork="yes" encoding="UTF-8">
+	       <src refid="srcpath"/>
+	    </javac>
+		<copy todir="${app.dir}/classes"  overwrite="true">
+	      <fileset dir="${src.dir}">
+	        <exclude name="**/*.java/**"/>
+	        <exclude name="**/.svn"/>
+	      </fileset>
+	    </copy>
+		<jar destfile="${lib.dir}/wdm.jar">
+			<fileset dir="${app.dir}/classes">
+				<exclude name="**/.svn"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="copyJars">
+		<copy todir="${tomcat.dir}/WEB-INF/lib" overwrite="true">            
+			<fileset dir="${lib.dir}">
+				<include name="**/wdm.jar"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="copyJSPs">
+		<copy todir="${tomcat.dir}" overwrite="true">            
+			<fileset dir="${app.dir}/WebRoot">
+			    <include name="**/*.jsp"/>
+				<include name="**/*.js"/>
+				<include name="**/*.css"/>
+			</fileset>
+		</copy>
+	</target>
+</project>

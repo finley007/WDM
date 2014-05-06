@@ -1,0 +1,60 @@
+<field_mapping>
+	<table name="devinfo">
+		<field name="DEV_ONLINE_STATUS">
+			<value code="0">field.devinfo.online.status.offline</value>
+			<value code="1">field.devinfo.online.status.online</value>
+		</field>
+	</table>
+	<table name="wlaninfo">
+		<field name="WLAN_SECURITYMODE">
+			<value code="0">OPEN</value>
+			<value code="1">WEP</value>
+			<value code="2">802.11i</value>
+		</field>
+		<field name="WLAN_BROADCASTSSID">
+			<value code="0">colomn.name.not.broadcast</value>
+			<value code="1">colomn.name.broadcast</value>
+		</field>
+		<field name="WLAN_QOS">
+			<value code="0">colomn.name.turn.off</value>
+			<value code="1">colomn.name.turn.on</value>
+		</field>
+		<field name="WLAN_MACFILTER">
+			<value code="0">OPEN</value>
+			<value code="1">colomn.name.black.list</value>
+			<value code="2">colomn.name.white.list</value>
+		</field>
+		<field name="WLAN_FLOWCONTROLMODE">
+			<value code="0">OPEN</value>
+			<value code="1">colomn.name.turn.on</value>
+			<value code="2">colomn.name.turn.on</value>
+		</field>
+	</table>
+	<table name="securityinfo">
+		<field name="SECURITY_MODE">
+			<value code="1">WEP</value>
+			<value code="2">802.11i</value>
+		</field>
+		<field name="SECURITY_KEYTYPE">
+			<value code="0">ASCii</value>
+		</field>
+		<field name="SECURITY_KEYLENGTH">
+			<value code="0">WEP 64 Bit</value>
+			<value code="1">WEP 128 Bit</value>
+		</field>
+		<field name="SECURITY_KEYINDEX">
+			<value code="0">密钥1</value>
+			<value code="1">密钥2</value>
+			<value code="2">密钥3</value>
+			<value code="3">密钥4</value>
+		</field>
+		<field name="SECURITY_AUTHMODE">
+			<value code="0">WPA-PSK</value>
+			<value code="1">WPA2-PSK</value>
+		</field>
+		<field name="SECURITY_CIPHER">
+			<value code="0">TKIP</value>
+			<value code="1">AES</value>
+		</field>
+	</table>
+</field_mapping>

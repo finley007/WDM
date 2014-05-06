@@ -1,0 +1,355 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Flod.Wang
+-  All Rights Reserved.
+-
+- GPL - The GNU General Public License    http://www.gnu.org/licenses/gpl.txt 
+- Permits anyone the right to use and modify the software without limitations 
+- as long as proper  credits are given  and the original  and modified source 
+- code are included. Requires  that the final product, software derivate from 
+- the original  source or any  software  utilizing a GPL  component, such  as 
+- this, is also licensed under the GPL license.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="init()" for="window" />
+<public:attach event="onclick" onevent="clickNode()" />
+<public:attach event="ondblclick" onevent="LT_Swap()" />
+
+<public:property name="isSelectedAll" />
+<public:property name="bTree" />
+<public:property name="ROOTID" />
+<public:property name="LEAFID" />
+<public:property name="ROOTTEXT" />
+
+<public:method name="SelectAll" />
+<public:method name="SelectMultipleLine" />
+<public:method name="unSelectMultipleLine" />
+<public:method name="LT_getListSelectionIndexArray" />
+
+<script language=JScript>
+/*****************************************************************
+* Global varible
+******************************************************************/
+
+//保存各功能树结构
+var treeList=new Array();
+
+//Const value of Field position
+var TREE_IMG=0;
+var ROOT_ID=(ROOTID==null)?1:(parseInt(ROOTID));
+var LEAF_ID=(LEAF_ID==null)?3:(parseInt(LEAFID));
+
+var ROOT_TEXT=(ROOTTEXT==null)?"所有":(ROOTTEXT.replace(/\s/g,""));
+
+var _bTree=(bTree==null) ? false : (bTree.toLowerCase()=="true");
+var _isSelectedAll=(isSelectedAll==null) ? false : (isSelectedAll.toLowerCase()=="true");
+isSelectedAll=_isSelectedAll;
+
+/*****************************************************************
+* 用户角色管理设置用
+* added by flod.wang 2004.11.30
+******************************************************************/
+
+function init(){
+    var i,j,len;
+    var sRootHtml="";
+    var strLeafID="";
+    var strRootID="";
+    var myLeaf,myRoot;
+
+    if (rows.length==1) return;
+    if ( !_bTree ) return;
+
+    for (i=1;i<rows.length;i++){
+        strLeafID=rows[i].cells[LEAF_ID].innerText.replace(/\s/g,"");
+        strRootID=rows[i].cells[ROOT_ID].innerText.replace(/\s/g,"");
+
+        //init a Functree Node
+        if (treeList[strRootID]==null){
+            treeList[strRootID]=new Array();
+            treeList[strRootID].leaf=new Array();
+            treeList[strRootID].root="";
+        }
+
+        //Generate a FuncTree
+        if ( strLeafID!=ROOT_TEXT){
+            treeList[strRootID].leaf.push(rows[i].id);
+        }else{
+            treeList[strRootID].root=rows[i].id;
+        }
+    }
+
+    //Generate tree Img
+    sRootHtml="<img SRC='images/listTree_Minus.gif' alt='minus' >";
+    for (key in treeList){
+        myLeaf=treeList[key].leaf;
+        myRoot=treeList[key].root;
+        if ( myRoot.replace(/\s/g,"")=="") continue;
+        len=myLeaf.length;
+
+
+        if (len!=0){
+            rows(myRoot).cells(TREE_IMG).innerHTML=sRootHtml;
+            rows(myLeaf[len-1]).cells(TREE_IMG).style.backgroundImage="url(images/treeGridEnd.gif)";
+            rows(myLeaf[len-1]).cells(TREE_IMG).style.backgroundRepeat="no-repeat";
+        }
+        for (i=0;i<len-1;i++){
+            rows(myLeaf[i]).cells(TREE_IMG).style.backgroundImage="url(images/treeGridT.gif)";
+            rows(myLeaf[i]).cells(TREE_IMG).style.backgroundRepeat="repeat-y";
+        }
+    }
+}
+
+/*****************************************************************
+* Tree Node的click响应代码
+* added by flod.wang 2004.11.30
+*
+* 描述：实现tree node的expand/collapse
+* added by flod.wang 2004.11.30
+*
+******************************************************************/
+function clickNode(){
+    var oRow = window.event.srcElement;
+    if ( oRow.alt=="plus"){
+        oRow.src="images/listTree_Minus.gif"
+        oRow.alt="minus";
+    }else if ( oRow.alt=="minus"){
+        oRow.src="images/listTree_Plus.gif"
+        oRow.alt="plus";
+    }else
+        return;
+
+    while (oRow.tagName != "TR") {
+        if (oRow.tagName == "BODY") return;
+        oRow = oRow.parentElement;
+    }
+
+    var strRootID=oRow.cells[ROOT_ID].innerText.replace(/\s/g,"");
+    for (var i=0; i<treeList[strRootID].leaf.length;i++){
+        if (rows[treeList[strRootID].leaf[i]].style.display=="none"){
+            rows[treeList[strRootID].leaf[i]].style.display="block";
+        }else {
+            rows[treeList[strRootID].leaf[i]].style.display="none";
+        }
+    }
+    //调用list.htc中的scroll_event来确保colHead位置始终置顶
+    element.scroll_event();
+}
+
+/*****************************************************************
+* 切换row的checked状态
+*
+* added by flod.wang 2004.11.10
+* modified by flod.wang 2004.11.30
+******************************************************************/
+function LT_Swap(){
+    var i,j,sum_checked;
+    var strRootID,strLeafID;
+    var imgs;
+    var oRow;
+    oRow=window.event.srcElement;
+
+    while (oRow.tagName != "TR") {
+        if (oRow.tagName == "BODY") return;
+        oRow = oRow.parentElement;
+    }
+
+    imgs= oRow.all.tags("IMG");
+    if (imgs!=null){
+        for (i=0;i<imgs.length;i++){
+            if (imgs[i].alt.toLowerCase()=="checked"){
+                imgs[i].src="images/unchecked.gif";
+                imgs[i].alt="unchecked";
+            }else if (imgs[i].alt.toLowerCase()=="unchecked"){
+                imgs[i].src="images/checked.gif";
+                imgs[i].alt="checked";
+            }
+        }
+        LT_UpdateTreeState(oRow);
+    }
+}
+/*****************************************************************
+* 更新当前row及所在tree的checked状态
+*
+* added by flod.wang 2004.12.1
+******************************************************************/
+function LT_UpdateTreeState(oRow){
+    var i,j,sum_checked;
+    var strRootID,strLeafID;
+    var imgs;
+
+    if (oRow==null) return;
+    if (!_bTree) return;
+
+    imgs = oRow.all.tags("IMG");
+
+    //自动更新相应的row的check状态
+    while (oRow!=null && oRow.tagName != "TR") {
+        if (oRow.tagName == "BODY") return;
+        oRow = oRow.parentElement;
+    }
+    strRootID=oRow.cells[ROOT_ID].innerText.replace(/\s/g,"");
+    strLeafID=oRow.cells[LEAF_ID].innerText.replace(/\s/g,"");
+    sum_checked=0;
+
+    if (strLeafID==ROOT_TEXT){
+        if ( LT_GetChecked(rows(oRow.id))==true){
+            for (i=0; i<treeList[strRootID].leaf.length;i++){
+                LT_SetChecked(rows(treeList[strRootID].leaf[i]));
+            }
+        }else{
+            for (i=0; i<treeList[strRootID].leaf.length;i++){
+                LT_SetUnChecked(rows(treeList[strRootID].leaf[i]));
+            }
+        }
+    }else{
+        for (i=0; i<treeList[strRootID].leaf.length;i++){
+            if ( LT_GetChecked(rows(treeList[strRootID].leaf[i]))==true){
+                sum_checked++;
+            }
+        }
+        if (sum_checked == treeList[strRootID].leaf.length){
+            LT_SetChecked(rows(treeList[strRootID].root));
+        }else{
+            LT_SetUnChecked(rows(treeList[strRootID].root));
+        }
+    }
+}
+
+
+/*****************************************************************
+* 设置row的checked状态
+*
+* added by flod.wang 2004.12.1
+******************************************************************/
+function LT_SetChecked(oRow){
+    var i;
+    var imgs;
+
+    if (oRow==null) return;
+
+    imgs = oRow.all.tags("IMG");
+    if (imgs!=null){
+        for (i=0;i<imgs.length;i++){
+            if (imgs[i].alt.toLowerCase()=="checked"){
+                //Do nothing
+            }else if (imgs[i].alt.toLowerCase()=="unchecked"){
+                imgs[i].src="images/checked.gif";
+                imgs[i].alt="checked";
+            }
+        }
+    }
+}
+
+/*****************************************************************
+* 设置row的unchecked状态
+*
+* added by flod.wang 2004.12.1
+******************************************************************/
+function LT_SetUnChecked(oRow){
+    var i;
+    var imgs;
+
+    if (oRow==null) return;
+
+    imgs = oRow.all.tags("IMG");
+    if (imgs!=null){
+        for (i=0;i<imgs.length;i++){
+            if (imgs[i].alt.toLowerCase()=="checked"){
+                imgs[i].src="images/unchecked.gif";
+                imgs[i].alt="unchecked";
+            }else if (imgs[i].alt.toLowerCase()=="unchecked"){
+                //Do nothing
+            }
+        }
+    }
+}
+
+/*****************************************************************
+* 取回row的checked状态
+*
+* added by flod.wang 2004.12.1
+******************************************************************/
+function LT_GetChecked(oRow){
+    var i;
+    var imgs;
+
+    if (oRow==null) return;
+
+    imgs = oRow.all.tags("IMG");
+    if (imgs!=null){
+        for (i=0;i<imgs.length;i++){
+            if (imgs[i].alt.toLowerCase()=="checked"){
+                return true;
+            }else if (imgs[i].alt.toLowerCase()=="unchecked"){
+                return false;
+            }
+        }
+    }
+}
+
+/*****************************************************************
+* Returns an array of the indexes in a list of the selected rows.
+*
+* The list parameter is the document of a list frame.
+*****************************************************************/
+function LT_getListSelectionIndexArray() {
+    var n = 0;
+    var arr = new Array();
+    if (rows.length > 0) {
+        for (var i=0; i<rows.length; i++) {
+            if ( LT_GetChecked(rows[i])) {
+                arr[n] = i;
+                n++
+            }
+        }
+    }
+    return arr;
+}
+
+function SelectAll(){
+    _isSelectedAll=!_isSelectedAll;
+    if (_isSelectedAll){
+        if (rows.length > 0) {
+            for (var i=0; i<rows.length; i++) {
+                LT_SetChecked(rows[i]);
+            }
+        }
+    }else{
+        if (rows.length > 0) {
+            for (var i=0; i<rows.length; i++) {
+                LT_SetUnChecked(rows[i]);
+            }
+        }
+    }
+
+    if (_isSelectedAll ){
+        isSelectedAll="true";
+    }else{
+        isSelectedAll="false";
+    }
+}
+
+function SelectMultipleLine(){
+    if (rows.length > 0) {
+        for (var i=0; i<rows.length; i++) {
+            if (rows[i].runtimeStyle.backgroundColor != ""){
+                LT_SetChecked(rows[i]);
+                LT_UpdateTreeState(rows[i]);
+            }
+        }
+    }
+}
+
+function unSelectMultipleLine(list){
+    if (rows.length > 0) {
+        for (var i=0; i<rows.length; i++) {
+            if (rows[i].runtimeStyle.backgroundColor != ""){
+                LT_SetUnChecked(rows[i]);
+                LT_UpdateTreeState(rows[i]);
+            }
+        }
+    }
+}
+
+</script>
+</public:component>

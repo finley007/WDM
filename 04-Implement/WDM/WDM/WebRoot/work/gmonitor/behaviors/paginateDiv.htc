@@ -1,0 +1,59 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="init()" for="window" />
+<public:property name="start" />
+<public:property name="end" />
+<public:property name="total" />
+
+<script language=JScript>
+var s = (start==null)? "1" : start;
+var e = (end==null)? "100" : end;
+var t = (total==null)? "100" : total;
+
+function init() {
+    var temp = "<table cellpadding=0 cellspacing=0><tr><td style='padding-right:2px'><nobr>"+s+"-"+e+" of "+t+"</nobr></td>";
+    
+    if (parseInt(s) > 1) {
+        temp += '<td><img class=hoverBtnHTC src="images/paginateStart.gif" alt="Beginning of List"></td>';
+        temp += '<td><img class=hoverBtnHTC src="images/paginatePrev.gif" alt="Previous 100"></td>';
+    }else {
+        temp += '<td><img src="images/paginateStartx.gif" alt="Beginning of List" style="margin: 1px"></td>';
+        temp += '<td><img src="images/paginatePrevx.gif" alt="Previous 100" style="margin: 1px"></td>';
+    }
+    
+    if (parseInt(e) < parseInt(t)) {
+        temp += '<td><img class=hoverBtnHTC src="images/paginateNext.gif" alt="Next 100"></td>';
+        temp += '<td><img class=hoverBtnHTC src="images/paginateEnd.gif" alt="End of List"></td>';
+    }else {
+        temp += '<td><img src="images/paginateNextx.gif" alt="Next 100" style="margin: 1px"></td>';
+        temp += '<td><img src="images/paginateEndx.gif" alt="End of List" style="margin: 1px"></td>';
+    }
+    
+    temp += "</tr></table>";
+    innerHTML = temp;
+}
+</script>
+</public:component>

@@ -1,0 +1,50 @@
+.div_RightMenu { 
+		position:absolute; 
+		list-style:none;
+		font:verdana;
+}
+
+.div_RightMenu div {
+		background:#bbb;
+		position:relative;
+}
+
+.div_RightMenu ul {
+		position:relative;
+		background:#fff; 
+		border:1px solid #999;
+		left:-2px;top:-2px; 
+		margin:0; 
+		padding:1px 0;
+}
+
+.div_RightMenu ul li {
+		list-style:none; 
+		margin:0 1px;
+		padding:0 5px 0 5px;
+		line-height:25px;
+		height:25px; 
+		background-repeat:no-repeat;
+		border-width:1px;
+		border-style:solid;
+		border-color:#fff;
+		font-size:12px;
+}
+
+.div_RightMenu ul li input {
+		vertical-align:middle;
+		cursor:pointer
+}
+
+.div_RightMenu input.submit {
+		width:32px;
+		height:22px;
+		float:right;
+		font-size:12px;
+		vertical-align:middle;
+}
+
+.div_RightMenu ul li.RM_mouseover { 
+		background-color:#B6BDD2; 
+		border-color:#0A246A;
+}

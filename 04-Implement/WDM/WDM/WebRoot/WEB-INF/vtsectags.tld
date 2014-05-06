@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE taglib PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.1//EN"
+        "http://java.sun.com/j2ee/dtds/web-jsptaglibrary_1_1.dtd">
+<taglib>
+    <tlibversion>1.0</tlibversion>
+    <jspversion>1.1</jspversion>
+    <shortname>bw4securitytags</shortname>
+    <info>A blank tag library template. 
+    </info>
+    <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+    <tldx>
+        <tagHandlerGenerationRoot>C:\devel\develop\bmeprojects\bw4securitytags</tagHandlerGenerationRoot>
+    </tldx>
+    -->
+    <tag>
+        <name>login</name>
+        <tagclass>com.vitria.af.web.security.LoginTag</tagclass>
+        <bodycontent>empty</bodycontent>
+        <info/>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>com.vitria.af.web.security</packagename>
+            <findparent>FALSE</findparent>
+        </tldx>
+        -->
+        <attribute>
+            <name>userid</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>userid_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>password</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>password_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>success</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>successURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>failure</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>failureURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+    <tag>
+        <name>setLoginPage</name>
+        <tagclass>com.vitria.af.web.security.SetLoginPageTag</tagclass>
+        <bodycontent>empty</bodycontent>
+        <info/>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>com.vitria.af.web.security</packagename>
+            <findparent>FALSE</findparent>
+        </tldx>
+        -->
+        <attribute>
+            <name>page</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>pageURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+    <tag>
+        <name>isLogin</name>
+        <tagclass>com.vitria.af.web.security.IsLoginTag</tagclass>
+        <bodycontent>JSP</bodycontent>
+        <info/>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>com.vitria.af.web.security</packagename>
+            <findparent>FALSE</findparent>
+        </tldx>
+        -->
+        <attribute>
+            <name>failure</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>failureURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>noRedirect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>noRedirect_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+    <tag>
+        <name>logout</name>
+        <tagclass>com.vitria.af.web.security.LogoutTag</tagclass>
+        <bodycontent>empty</bodycontent>
+        <info/>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>com.vitria.af.web.security</packagename>
+            <findparent>FALSE</findparent>
+        </tldx>
+        -->
+        <attribute>
+            <name>success</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>successURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>failure</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>failureURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+    <tag>
+        <name>checkAccess</name>
+        <tagclass>com.vitria.af.web.security.CheckAccessTag</tagclass>
+        <bodycontent>JSP</bodycontent>
+        <info/>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>com.vitria.af.web.security</packagename>
+            <findparent>FALSE</findparent>
+            <parenttype></parenttype>
+            <parentvariable></parentvariable>
+        </tldx>
+        -->
+        <attribute>
+            <name>group</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>group_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>role</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>role_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>user</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>user_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>failure</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <type>String</type>
+                <javaVariable>failureURL_</javaVariable>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                
+                
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+</taglib>

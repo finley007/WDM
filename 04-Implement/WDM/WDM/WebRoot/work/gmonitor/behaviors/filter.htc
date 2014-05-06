@@ -1,0 +1,451 @@
+<public:component>
+/*-----------------------------------------------------------------------------
+-  Copyright (c) 2003 by Vitria Technology, Inc.
+-  All Rights Reserved.
+-  
+-  This SOURCE CODE FILE, which has been provided by Vitria as part
+-  of a Vitria product for use ONLY by licensed users of the product,
+-  includes information that is CONFIDENTIAL and PROPRIETARY to Vitria.
+-  
+-  SOME API's contained herein are for INTERNAL USE ONLY and are NOT to
+-  be used by ANY licensee of the product.  Vitria reserves the right
+-  to change such API's at any time and is not required to support
+-  them in current or future releases.
+-  
+-  USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS
+-  OF THE LICENSE STATEMENT AND LIMITED WARRANTY FURNISHED WITH
+-  THE PRODUCT.
+-  
+-  IN PARTICULAR, YOU WILL INDEMNIFY AND HOLD VITRIA HARMLESS FROM
+-  AND AGAINST ANY CLAIMS OR LIABILITIES ARISING OUT OF THE USE,
+-  REPRODUCTION, OR DISTRIBUTION OF YOUR PROGRAMS, INCLUDING ANY
+-  CLAIMS OR LIABILITIES ARISING OUT OF OR RESULTING FROM THE
+-  USE, MODIFICATION, OR DISTRIBUTION OF PROGRAMS OR FILES CREATED
+-  FROM, BASED ON, AND/OR DERIVED FROM THIS SOURCE CODE FILE.
+------------------------------------------------------------------------------*/
+<public:attach event="onload" onevent="init()" for="window" />
+<public:property name="filterWhat" />
+<public:property name="targetFrame" />
+<public:property name="filterClass" />
+<public:property name="relativeUrl" />
+<public:property name="filterExtras" />
+<public:property name="multiPerPage" />
+<public:method name="getValues" />
+<public:method name="getFilterExtras" />
+<public:method name="setFilterExtras" />
+<public:method name="getFilterBarId" />
+
+<script language=JScript>
+var filterTitle = (filterWhat==null)? getMessage("js_filter_default") : formatMessage(getMessage("js_filter_what"), filterWhat);
+var frameIndex = (targetFrame==null)? 0 : parseInt(targetFrame);
+var classname = (filterClass==null)? "" : filterClass;
+var extraParms = (filterExtras==null)? "" : filterExtras;
+var handleMulti = (multiPerPage==null)? false : multiPerPage;
+var mouseDown = false;
+var mouseDownX = 0;
+var mouseDownY = 0;
+var oDoc = element.document;
+var oBody = oDoc.body;
+var oTitleBar, oFilterBtn, oCloseBtn, oMoreBtn, oLessBtn, oFilterBar, oBtmShadow, oRtShadow, divCol;
+var oFilterBarId;
+var idArr, opIdArr, valueIdArr, boolOpIdArr, filterExtrasId;
+var layoutComplete=false, dropShadow=true, numSearchCriteria=2,  maxSearchCriteria=2;
+var relUrl = (relativeUrl==null)? "" : relativeUrl;
+//last four vars added 10-2
+var timeOperatorsText = [getMessage("js_filter_is_after_label"),
+			getMessage("js_filter_is_before_label"),
+			getMessage("js_filter_is_equal_to_label"),
+			getMessage("js_filter_is_not_equal_to_label")];
+var timeOperators = ["isGreaterThan", "isLessThan", "isEqualTo", "isNotEqualTo"];
+var allOperatorsText = [getMessage("js_filter_contains_label"),
+		getMessage("js_filter_starts_with_label"),
+		getMessage("js_filter_ends_with_label"),
+		getMessage("js_filter_is_equal_to_label"),
+		getMessage("js_filter_is_not_equal_to_label"),
+		getMessage("js_filter_is_less_than_label"),
+		getMessage("js_filter_is_greater_than_label")];
+var allOperators = ["contains", "startsWith", "endsWith", "isEqualTo", "isNotEqualTo", "isLessThan", "isGreaterThan"];
+
+
+function init() {
+    var lookIn = "";
+    var oTitleBarId=oDoc.uniqueID, oCloseBtnId=oDoc.uniqueID;
+    oFilterBarId=oDoc.uniqueID;
+    filterExtrasId = oDoc.uniqueID;
+    if (!handleMulti) {
+        // For backward compatibility
+        oTitleBarId = "titleBar";
+        oCloseBtnId = "closeBtn";
+        oFilterBarId = "filterBar";
+        filterExtrasId = "filterExtras";
+    }
+    var oListFrame = element.document.frames[frameIndex];
+    var coll = oListFrame.document.all.tags("TABLE");
+    var oColHead = coll[0].rows[0];
+    idArr = new Array(maxSearchCriteria+1);
+    opIdArr = new Array(maxSearchCriteria);
+    valueIdArr = new Array(maxSearchCriteria);
+    boolOpIdArr = new Array(maxSearchCriteria);
+    if (!handleMulti) {
+        idArr[0] = "filterObjName";
+        idArr[1] = "filterObjName2";
+        idArr[2] = "filterBtn";
+        opIdArr[0] = "filterType";
+        opIdArr[1] = "filterType2";
+        valueIdArr[0] = "filterValue";
+        valueIdArr[1] = "filterValue2";
+        boolOpIdArr[0] = "filterBoolean";
+        boolOpIdArr[1] = "filterBoolean2";
+    } else {
+        for (i=0; i<=maxSearchCriteria; i++) {
+            idArr[i] = oDoc.uniqueID;
+        }
+        // Ids of operator select widgets
+        for (i=0; i<maxSearchCriteria; i++) {
+            opIdArr[i] = oDoc.uniqueID;
+        }
+        // Ids of filter value text widgets
+        for (i=0; i<maxSearchCriteria; i++) {
+            valueIdArr[i] = oDoc.uniqueID;
+        }
+        // Ids of boolean operator select widgets
+        for (i=0; i<maxSearchCriteria; i++) {
+            boolOpIdArr[i] = oDoc.uniqueID;
+        }
+    }
+    for (i=0; i<oColHead.cells.length; i++) {
+        if (trim(oColHead.cells[i].innerText)!="")
+            lookIn += "<option value='" + oColHead.cells[i].getAttribute("filtername") + "'>" + oColHead.cells[i].innerText + "</option>";
+    }
+//alert("lookIn=" + lookIn);
+    var operators = "<option value='contains'>" + getMessage("js_filter_contains_label") + "</option>";
+    operators+= "<option value='startsWith'>" + getMessage("js_filter_starts_with_label") + "</option>";
+    operators+= "<option value='endsWith'>" + getMessage("js_filter_ends_with_label") + "</option>";
+    operators+= "<option value='isEqualTo'>" + getMessage("js_filter_is_equal_to_label") + "</option>";
+    operators+= "<option value='isNotEqualTo'>" + getMessage("js_filter_is_not_equal_to_label") + "</option>";
+    operators+= "<option value='isLessThan'>" + getMessage("js_filter_is_less_than_label") + "</option>";
+    operators+= "<option value='isGreaterThan'>" + getMessage("js_filter_is_greater_than_label") + "</option>";
+//alert("operators=" + operators);
+
+    var andLabel = getMessage("js_and_label");
+    var orLabel = getMessage("js_or_label");
+    var c = "<div id='"+oTitleBarId+"' style='background-color:rgb(192,208,241); padding:1; border-bottom:1 solid gray; margin-bottom:8px'>";
+    //var c = "<div id=titleBar style='background-color:rgb(192,208,241); padding:1; border-bottom:1 solid black; cursor:move'>";
+    c+= "<img src=\"" + relUrl + "images/filter.gif\" align=\"left\"><nobr>"+ filterTitle +"</nobr>";
+    c+= "<img src=\"" + relUrl + "images/closeX.gif\" id='"+oCloseBtnId+"' alt=\"" + getMessage("js_close_button_label") + "\" style='position:absolute; cursor:default; top:0; margin:1'></div>";
+    for (i=0; i<maxSearchCriteria; i++) {
+        c+= "<div style='padding:0 8 5 8'><nobr>";
+        c+= "<select id='"+idArr[i]+"'>"+lookIn + "</select><img src=" + relUrl + "images/spacer.gif width=5>";
+        c+= "<select id='"+opIdArr[i]+"'>" + operators + "<img src=" + relUrl + "images/spacer.gif width=5>";
+        c+= "<input id='"+valueIdArr[i]+"' type=text size=20><img src=" + relUrl + "images/spacer.gif width=5>";
+        c+= "<select id='"+boolOpIdArr[i]+"'><option value='and'>"+andLabel+"<option value='or'>"+orLabel+"</select></nobr></div>";
+    }
+    c+= "<button id='"+idArr[maxSearchCriteria]+"' style='width:55;margin:0;padding:1px 0 0 0; position:absolute' ";
+    c+= "onclick='doFilter(document.frames[" + frameIndex + "].document,\"" + filterClass + "\",false,"+'"'+relUrl+'"'+",document.getElementById("+'"'+element.id+'"'+"))'";
+    c+= ">" + getMessage("js_filter_label") + "</button>";
+    c+= "<input name='"+filterExtrasId+"' type=hidden value='" + extraParms + "'>";
+
+/*
+    c+= "<table cellpadding=0 cellspacing=0 id=searchTable style='margin:8'>";
+    //c+= "<tr><td colspan=7 valign=top height=18>" + filterTitle + "</td></tr>";
+    //c+= "<tr><td colspan=7 height=5></td></tr>";
+    c+= "<tr><td><select name='filterObjName'>" + lookIn;
+    c+= "</select></td><td width=5><img src=" + relUrl + "images/spacer.gif width=5></td><td>";
+    c+= "<select name='filterType'>" + operators + "</select></td><td width=5><img src=" + relUrl + "images/spacer.gif width=5></td>";
+    c+= "<td><input name='filterValue' type=text size=20></td><td width=5><img src=" + relUrl + "images/spacer.gif width=5></td><td>";
+    c+="<select name='filterBoolean'><option value='and'>AND</option><option value='or'>OR</option></select></td></tr>";
+    c+= "<tr><td colspan=7 height=6></td></tr>";
+    c+= "<tr><td><select name='filterObjName2'>" + lookIn;
+    c+= "</select></td><td width=5><img src=" + relUrl + "images/spacer.gif width=5></td><td>";
+    c+= "<select name='filterType2'>" + operators + "</select></td><td width=5><img src=" + relUrl + "images/spacer.gif width=5></td>";
+    c+= "<td><input name='filterValue2' type=text size=20></td><td width=5><img src=" + relUrl + "images/spacer.gif width=5></td>";
+    c+= "<td><button style='width:54;margin:0;padding:1px 0 0 0' ";
+    c+= "onclick='doFilter(document.frames[" + frameIndex + "].document," + '"' + filterClass + '"' + ",false)'>Filter</button>";
+    c+= "<input name='filterExtras' type=hidden value='" + extraParms + "'></td>";
+    c+= "</tr></table>";
+    //c+= "</form>";
+*/
+//alert("c=" + c);
+    innerHTML = c;
+
+    style.top = (oBody.clientHeight - clientHeight)/3;
+    style.left = (oBody.clientWidth - clientWidth)/2;
+    
+    divCol = element.all.tags("DIV");
+    oFilterBtn = oDoc.getElementById(idArr[maxSearchCriteria]);
+    // Hide last AND/OR select
+    divCol[numSearchCriteria].all.tags("SELECT")[2].style.visibility = "hidden";
+    for (i=0; i<maxSearchCriteria; i++) {
+        oDoc.getElementById(idArr[i]).attachEvent("onchange", selLookInChange);
+    }
+    
+    oTitleBar = oDoc.getElementById(oTitleBarId);
+    oTitleBar.attachEvent("onmousemove", titleBarMouseMove);
+    oTitleBar.attachEvent("onmousedown", titleBarMouseDown);
+    oTitleBar.attachEvent("onmouseup", titleBarMouseUp);
+
+    oCloseBtn = oDoc.getElementById(oCloseBtnId);
+    oCloseBtn.style.left = element.clientWidth - 20;
+    oCloseBtn.attachEvent("onclick", closeBtnClick);
+    oCloseBtn.attachEvent("onmouseover", closeBtnMouseOver);
+    oCloseBtn.attachEvent("onmouseout", closeBtnMouseOut);
+    
+    //construct the filter bar
+    var filterBar = "<table class=filterBar id='"+oFilterBarId+"' cellpadding=0 cellspacing=0><tr><td class=filterOn title='" +
+                    getMessage("js_filter_show_all_button_title") +
+                    "'><nobr>" +
+                    getMessage("js_filter_show_all_button_label") +
+                    "</nobr></td><td class=filterOff title='" +
+                    getMessage("js_filter_filter_list_button_title") +
+                    "'><nobr>" +
+                    getMessage("js_filter_filter_list_button_label") +
+                    "</nobr></td></tr></table>"
+    insertAdjacentHTML("beforeBegin", filterBar);
+    oFilterBar = oDoc.getElementById(oFilterBarId);
+    oFilterBar.attachEvent("onmouseout", filterBarMouseOut);
+    oFilterBar.attachEvent("onmouseover", filterBarMouseOver)
+
+    oFilterBar.attachEvent("onclick", filterBarClick);
+    
+    // So we can catch the Enter
+    element.attachEvent("onkeydown", trapKeyPress);
+
+    if (dropShadow) {
+        shadow = "<table id=btmShadow cellpadding=0 cellspacing=0 style='position:absolute; visibility:hidden; height:3; filter:alpha(opacity=65);'><tr><td bgcolor=454545 height=1></td></tr><tr><td bgcolor=gray height=1></td></tr><tr><td bgcolor=silver height=1></td></tr></table>";
+        insertAdjacentHTML("beforeBegin", shadow);
+        oBtmShadow = oDoc.getElementById("btmShadow");
+        shadow = "<table id=rtShadow cellpadding=0 cellspacing=0 style='position:absolute; visibility:hidden; width:3; filter:alpha(opacity=65);'><tr><td bgcolor=454545 width=1></td><td bgcolor=gray width=1></td><td bgcolor=silver width=1></td></tr></table>";
+        insertAdjacentHTML("beforeBegin", shadow);
+        oRtShadow = oDoc.getElementById("rtShadow");
+    }
+
+    if (clientWidth>0) doLayout();
+}
+
+function filterBarMouseOver() {
+    if (!layoutComplete) doLayout();
+    var oSource = window.event.srcElement;
+    if (oSource.tagName=="NOBR") oSource = oSource.parentElement;
+    if (oSource.tagName=="TD" && oSource.className != "filterOn")
+        oSource.runtimeStyle.backgroundColor= "rgb(211,223,244)";
+}
+
+function filterBarMouseOut() {
+    var oSource = window.event.srcElement;
+    if (oSource.tagName=="NOBR") oSource = oSource.parentElement;
+    if (oSource.tagName=="TD")
+        oSource.runtimeStyle.backgroundColor="";
+}
+
+function filterBarClick() {
+    var oSource = window.event.srcElement;
+    if (oSource.tagName=="NOBR") oSource = oSource.parentElement;
+    if (oSource.tagName!="TD") return;
+    oFilterBar.cells[0].className = "filterOff";
+    oFilterBar.cells[1].className = "filterOff";
+    oSource.className="filterOn";
+    style.visibility = (oSource.innerText==getMessage("js_filter_filter_list_button_label"))? "visible" : "hidden";
+    if (dropShadow) {
+        oBtmShadow.style.visibility = style.visibility;
+        oRtShadow.style.visibility = style.visibility;
+    }
+    if (oSource.innerText == getMessage("js_filter_show_all_button_label")) {
+        doFilter(element.document.frames[frameIndex].document, filterClass, true, relUrl, element);
+        for (i=0; i<maxSearchCriteria; i++) {
+            element.document.getElementById(idArr[i]).selectedIndex = 0;
+            element.document.getElementById(opIdArr[i]).selectedIndex = 0;
+            element.document.getElementById(valueIdArr[i]).value = "";
+            element.document.getElementById(boolOpIdArr[i]).selectedIndex = 0;
+        }
+/*
+        element.document.all.filterType.selectedIndex = 0;
+        element.document.all.filterObjName.selectedIndex = 0;
+        element.document.all.filterValue.value = "";
+        element.document.all.filterType2.selectedIndex = 0;
+        element.document.all.filterObjName2.selectedIndex = 0;
+        element.document.all.filterValue2.value = "";
+        element.document.all.filterBoolean.selectedIndex = 0;
+*/
+    }
+}
+
+function titleBarMouseMove() {
+    if (!mouseDown) return;
+    var x = window.event.clientX - mouseDownX;
+    var y = window.event.clientY - mouseDownY;
+    if (x<0) x=0;
+    if (y<2) y=2;
+    if (x > oBody.clientWidth + oBody.scrollLeft - 53) x = oBody.clientWidth + oBody.scrollLeft - 53;
+    if (y > oBody.clientHeight + oBody.scrollTop - 20) y = oBody.clientHeight + oBody.scrollTop - 20;
+    style.left = x;
+    style.top = y;
+    moveShadow();
+}
+
+function titleBarMouseDown() {
+    if (event.button!=1) return;
+    if (oCloseBtn.runtimeStyle.backgroundColor != "") return;
+    oTitleBar.setCapture();
+    mouseDownX = window.event.clientX - offsetLeft;
+    mouseDownY = window.event.clientY - offsetTop;
+    mouseDown = true;
+}
+
+function titleBarMouseUp() {
+    oTitleBar.releaseCapture();
+    mouseDown = false;
+}
+
+function closeBtnMouseOver() {
+    oCloseBtn.runtimeStyle.backgroundColor = "silver";
+    oCloseBtn.runtimeStyle.margin = "0";
+    oCloseBtn.runtimeStyle.border = "1 solid black";
+    oCloseBtn.runtimeStyle.borderTopColor = "white";
+    oCloseBtn.runtimeStyle.borderLeftColor = "white";
+}
+
+function closeBtnMouseOut() {
+    oCloseBtn.runtimeStyle.backgroundColor = "";
+    oCloseBtn.runtimeStyle.margin = "";
+    oCloseBtn.runtimeStyle.border = "";
+}
+
+function closeBtnClick() {
+    style.visibility = "hidden";
+    if (dropShadow) {
+        oBtmShadow.style.visibility = "hidden";
+        oRtShadow.style.visibility = "hidden";
+    }
+}
+
+function moveShadow() {
+    if (!dropShadow) return;
+    t = element.offsetTop;
+    l = element.offsetLeft;
+    w = element.clientWidth;
+    h = element.clientHeight;
+    oBtmShadow.style.top = t + h + 2;
+    oBtmShadow.style.left = l + 7;
+    oBtmShadow.style.width = w - 5;
+    oRtShadow.style.top = t + 7;
+    oRtShadow.style.left = l + w + 2;
+    oRtShadow.style.height = h - 3;
+}
+
+function doLayout() {
+    oCloseBtn.style.left = element.clientWidth - 17;
+    //oLessBtn.style.left = element.clientWidth - 17-35;
+    //oMoreBtn.style.left = element.clientWidth - 17-20;
+    oFilterBtn.style.left = divCol[1].all.tags("SELECT")[2].offsetLeft;
+    oFilterBtn.style.top = divCol[numSearchCriteria].all.tags("SELECT")[2].offsetTop;
+    style.top = (oBody.clientHeight - clientHeight)/2;
+    style.left = (oBody.clientWidth - clientWidth)/2;
+    //clipControls();
+    for (var i=numSearchCriteria+1; i<=maxSearchCriteria; i++) {
+        divCol[i].style.display = "none";
+    }
+    moveShadow();
+    layoutComplete = true;
+}
+
+function trapKeyPress() {
+    if (event.keyCode==13) { //enter
+        event.cancelBubble = true; //prevent body from capturing event and closing dialog
+        //submit form
+        oFilterBtn.click();
+    }
+}
+
+//added 10-2
+function selLookInChange() {
+    var oColList = event.srcElement, i, oOption;
+    var oOperatorList = oColList.parentElement.parentElement.all.tags("SELECT")[1];
+    var oTxtField = oColList.parentElement.parentElement.all.tags("INPUT")[0];
+    var sCol = (oColList.options(oColList.selectedIndex).text);
+    var sOperator = (oOperatorList.options(oOperatorList.selectedIndex).text);
+    
+    oTxtField.className = "";
+    while (oOperatorList.options.length>0) {
+        oOperatorList.options[0].removeNode();
+    }
+    if (sCol.indexOf("Date")>-1 || sCol.indexOf("Time")>-1) {
+        for (i=0; i<timeOperators.length; i++) {
+            oOption = oDoc.createElement("OPTION");
+            oOption.text = timeOperatorsText[i];
+	    oOption.setAttribute("value", timeOperators[i]);
+            oOperatorList.add(oOption);
+        }
+        if (sCol=="Date") {
+            oTxtField.className = "maskHTC";
+            oTxtField.setAttribute("maskType", "date", true);
+            oTxtField.focus();
+        }else if (sCol=="Time") {
+            oTxtField.className = "maskHTC";
+            oTxtField.setAttribute("maskType", "time", true);
+            oTxtField.focus();
+        }
+    }else {
+        for (i=0; i<allOperators.length; i++) {
+            oOption = oDoc.createElement("OPTION");
+            oOption.text = allOperatorsText[i];
+	    oOption.setAttribute("value", allOperators[i]);
+            oOperatorList.add(oOption);
+        }
+    }
+    for (i=0; i<oOperatorList.options.length; i++) {
+        if (sOperator==oOperatorList.options[i].text) {
+            oOperatorList.selectedIndex=i;
+            break;
+        }
+    }
+}
+
+function getValues() {
+    var result = "";
+    for (i=0; i<maxSearchCriteria; i++) {
+//alert("searching for id " + idArr[i]);
+        if (!element.document.getElementById(idArr[i])) {
+            alert("couldn't find id " + idArr[i] + " where i="+i);
+        } else if (!element.document.getElementById(opIdArr[i])) {
+            alert("couldn't find op id " + opIdArr[i] + " where i="+i);
+        } else if (!element.document.getElementById(valueIdArr[i])) {
+            alert("couldn't find value id " + valueIdArr[i] + " where i="+i);
+        } else {
+        var replacedValue = element.document.getElementById(valueIdArr[i]).value;
+        var slashLoc = replacedValue.indexOf("/");
+        while (slashLoc >= 0) {
+            replacedValue = replacedValue.replace("/", "%%slash%%");
+            slashLoc = replacedValue.indexOf("/");
+        }
+//alert("in getValues, value="+replacedValue);
+        result += element.document.getElementById(idArr[i]).value + "/" +
+                  element.document.getElementById(opIdArr[i]).value + "/" +
+                  replacedValue;
+        }
+        if (i < maxSearchCriteria - 1) {
+            // Not last one, add bool values
+            result +=  "/" + element.document.getElementById(boolOpIdArr[i]).value + "/";
+        }
+    }
+    return result;
+}
+
+function getFilterExtras() {
+    if (element.document.getElementById(filterExtrasId)) {
+        return element.document.getElementById(filterExtrasId).value;
+    }
+    return "";
+}
+
+function setFilterExtras(extras) {
+    if (element.document.getElementById(filterExtrasId)) {
+        element.document.getElementById(filterExtrasId).value = extras;
+    }
+}
+
+function getFilterBarId() {
+    return oFilterBarId;
+}
+
+</script>
+</public:component>
